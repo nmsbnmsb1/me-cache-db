@@ -1,4 +1,4 @@
-export type IOnTrigger = (body: any) => Promise<void>;
+export type IOnTrigger = (body: any) => Promise<any>;
 export declare class Trigger {
     private static map;
     static set(name: string, onTrigger: IOnTrigger): void;

@@ -1,3 +1,4 @@
+import { CacheManager } from './core/cache';
 import { IDataStructDescriptor, IDataKey, cdel, cgetData, csetData, IData } from './core/cdata';
 
 //--------------------数据操作--------------------
@@ -30,41 +31,45 @@ export async function sel(
 //update
 export async function update(
 	cid: undefined | string,
-	data: any,
-	updater: (data: any) => Promise<number>,
-	keys: (IDataKey & { pk: string })[]
+	data: IData | IData[],
+	sd: IDataStructDescriptor,
+	updater: (data?: any) => Promise<boolean>,
+	expireMS?: number
 	//
 ) {
-	let success = false;
 	try {
-		success = (await updater(data)) > 0;
-	} catch (e) {}
-	//如果成功，删除key
-	if (success) {
-		for (let k of keys) {
-			cdel(cid, { ...k, pk: k.pk || data[k.pkfield] });
-		}
+		await updater(data);
+	} catch (e) {
+		throw e;
 	}
-	return success;
+	//如果更新成功，更新缓存
+	await csetData(cid, data, [sd], expireMS);
 }
 
 //del
 export async function del(
 	cid: undefined | string,
-	data: any,
-	deleter: (data: any) => Promise<number>,
-	keys: (IDataKey & { pk: string })[]
+	data: IData | IData[],
+	key: IDataKey,
+	deleter: (data: any) => Promise<boolean>
 	//
 ) {
-	let success = false;
 	try {
-		success = (await deleter(data)) > 0;
-	} catch (e) {}
+		await deleter(data);
+	} catch (e) {
+		throw e;
+	}
 	//
-	if (success) {
-		for (let k of keys) {
-			cdel(cid, { ...k, pk: k.pk || data[k.pkfield] });
+	if (!Array.isArray(data)) {
+		cdel(cid, { ...key, pk: data[key.pkfield] });
+	} else {
+		let cache = CacheManager.getCache(cid);
+		if (cache) {
+			let pl = cache.pipeline();
+			for (let d of data) {
+				pl.del(cache.getKey('data', key.ns, d[key.pkfield]));
+			}
+			pl.exec();
 		}
 	}
-	return success;
 }

@@ -1,7 +1,7 @@
 //缓存
 export interface ICache {
 	//common
-	getKey(prefix: string, ns: string, pk: string): string;
+	getKey(prefix: string, ns: string, pk: any): string;
 	//
 	exists(key: string): Promise<boolean>;
 	expire(key: string, ms: number): Promise<any>;

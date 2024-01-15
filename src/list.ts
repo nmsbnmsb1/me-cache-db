@@ -2,13 +2,14 @@ import { ISqlOptions } from './core/db';
 import { IDataStructDescriptor, IHandledStructDescriptor, handleStructDescriptor, cgetData, cset, IData } from './core/cdata';
 import { CacheManager, ICache } from './core/cache';
 import { Trigger } from './trigger';
+import { IFields, attachAs } from './core/fields';
 
 //List查询器
 export interface IListKey {
 	ns: string;
 	listName: string;
 }
-export interface IListDataStructDescriptor extends IDataStructDescriptor, ISqlOptions {}
+export interface IListDataStructDescriptor extends IDataStructDescriptor, Partial<ISqlOptions> {}
 export interface IListPageData {
 	count: number;
 	page: number;
@@ -23,12 +24,8 @@ export type IListSelector = (
 	sds: IListDataStructDescriptor[]
 ) => Promise<{ count: number; datas: IData[] }>;
 export interface IList {
-	sel(page: number, pageSize: number, order: 'ASC' | 'DESC'): Promise<IListPageData>;
+	sel(page: number, pageSize: number, order: 'ASC' | 'DESC', fields?: IFields[], forceDB?: boolean): Promise<IListPageData>;
 	del(delDatas: boolean, onDataRefsNotFound?: () => Promise<any[]>): Promise<void>;
-}
-
-function getListData(count: number, page: number, pageSize: number, datas: any) {
-	return { count, page, pageSize, totalPages: pageSize <= 0 ? 1 : Math.ceil(count / pageSize), datas };
 }
 
 //列表
@@ -37,50 +34,67 @@ export class List implements IList {
 	private cache: ICache;
 	private key: IListKey;
 	private listKey: string;
-	private sds: (IListDataStructDescriptor & IHandledStructDescriptor)[];
+	private sds: IListDataStructDescriptor[];
 	private selector: IListSelector;
 	private expireMS: number;
 
-	constructor(cid: undefined | string, key: IListKey, sds: IListDataStructDescriptor[], selector: IListSelector, expireMS?: number) {
+	constructor(
+		cid: undefined | string,
+		key: IListKey,
+		sds: IListDataStructDescriptor[],
+		selector: IListSelector,
+		expireMS?: number
+		//
+	) {
 		this.cid = cid;
 		this.cache = CacheManager.getCache(this.cid);
 		this.key = key;
 		this.listKey = this.cache.getKey('list', key.ns, key.listName);
-		for (let sd of sds) {
-			handleStructDescriptor(sd);
-		}
-		this.sds = sds as any;
+		this.sds = sds;
 		this.selector = selector;
 		this.expireMS = expireMS || CacheManager.defaultExpireMS;
 	}
-	public async sel(page: number, pageSize: number, order: 'ASC' | 'DESC' = 'ASC'): Promise<IListPageData> {
+	public async sel(page: number, pageSize: number, order: 'ASC' | 'DESC' = 'ASC', fields?: IFields[], forceDB?: boolean): Promise<IListPageData> {
 		let keyPrefix = `${pageSize}.${order}`;
 		let countKey = `${keyPrefix}.count`;
 		let pageDataKey = `${keyPrefix}.P${page}`;
 		//
+		//创建新的sds结构，放置多次调用使用同一个对象
+		let sds = [];
+		for (let i = 0; i < this.sds.length; i++) {
+			sds.push({ ...this.sds[i], ...(fields ? fields[i] : undefined) });
+		}
 		let count = 0;
 		let dataRefs;
-		let lcdata = await this.cache.get(this.listKey, [countKey, pageDataKey]);
-		if (lcdata) {
-			if (lcdata[countKey] !== null && lcdata[countKey] !== undefined) {
-				count = lcdata[countKey];
-				if (count === 0) {
-					return { count: 0, page, pageSize, totalPages: 0, datas: [] };
+		if (!forceDB) {
+			//尝试查询缓存
+			let lcdata = await this.cache.get(this.listKey, [countKey, pageDataKey]);
+			if (lcdata) {
+				if (lcdata[countKey] !== null && lcdata[countKey] !== undefined) {
+					count = lcdata[countKey];
+					if (count === 0) {
+						return { count: 0, page, pageSize, totalPages: 0, datas: [] };
+					}
 				}
-			}
-			if (lcdata[pageDataKey]) {
-				dataRefs = JSON.parse(lcdata[pageDataKey]);
-			}
-			if (count && dataRefs) {
-				let datas = await cgetData(this.cid, dataRefs, this.sds);
-				if (datas) {
-					return getListData(count, page, pageSize, datas);
+				if (lcdata[pageDataKey]) {
+					dataRefs = JSON.parse(lcdata[pageDataKey]);
+				}
+				if (count && dataRefs) {
+					let datas = await cgetData(this.cid, dataRefs, sds);
+					if (datas) {
+						return {
+							count,
+							page,
+							pageSize,
+							totalPages: pageSize <= 0 ? 1 : Math.ceil(count / pageSize),
+							datas: datas as any,
+						};
+					}
 				}
 			}
 		}
-		//运行到这里需要调用selector
 		//执行到这里，需要通过调用数据库获取数据
-		let data = await this.selector(page, pageSize, order, this.sds);
+		let data = await this.selector(page, pageSize, order, sds);
 		//全部写入缓存
 		let pl = this.cache.pipeline();
 		pl.set(this.listKey, countKey, data.count);
@@ -89,7 +103,7 @@ export class List implements IList {
 			dataRefs = [];
 			for (let i = 0; i < data.datas.length; i++) {
 				let dataRef = {};
-				cset(pl, data.datas[i], this.sds, this.expireMS, dataRef);
+				cset(pl, data.datas[i], sds, this.expireMS, dataRef);
 				dataRefs.push(dataRef);
 			}
 			pl.set(this.listKey, pageDataKey, JSON.stringify(dataRefs));
@@ -99,7 +113,13 @@ export class List implements IList {
 		pl.expire(this.listKey, this.expireMS);
 		pl.exec();
 		//
-		return getListData(data.count, page, pageSize, data.datas);
+		return {
+			count: data.count,
+			page,
+			pageSize,
+			totalPages: pageSize <= 0 ? 1 : Math.ceil(data.count / pageSize),
+			datas: data.datas,
+		};
 	}
 	public async del(delDatas: boolean) {
 		if (!delDatas) {
@@ -109,13 +129,18 @@ export class List implements IList {
 		let pl = this.cache.pipeline();
 		let data = await this.cache.get(this.listKey);
 		if (data) {
+			let sds = [];
+			for (let sd of this.sds) {
+				sds.push({ ns: sd.ns, dataPkField: !sd.as ? sd.pkfield : attachAs(sd.as, sd.pkfield) });
+			}
+			//
 			for (let key in data) {
 				let val = data[key];
 				if (!(typeof val === 'string' && val.startsWith('[{'))) continue;
 				//
 				let dataRefs = JSON.parse(val);
 				for (let dataRef of dataRefs) {
-					for (let sd of this.sds) {
+					for (let sd of sds) {
 						pl.del(this.cache.getKey('data', sd.ns, dataRef[sd.dataPkField]));
 					}
 				}
@@ -128,64 +153,61 @@ export class List implements IList {
 }
 
 //混合列表套装
-export type IListFactory = (where: any, key: IListKey, sds: IListDataStructDescriptor[], expire: number) => IList;
-export type IListNameParser = (where: any) => string;
+export type IListFactory = (where: IListKey | any) => IList;
 export class ListSet {
-	private baseKey: IListKey;
-	private sds: IListDataStructDescriptor[];
-	private nameParser: IListNameParser;
 	private factory: IListFactory;
 	private listMap: { [listName: string]: IList };
-	private expireMS: number;
 
-	constructor(
-		baseKey: string | { prefix?: string; ns: string },
-		sds: IListDataStructDescriptor[],
-		listNameParser: IListNameParser,
-		listFactory: IListFactory,
-		expireMS?: number
-	) {
-		this.baseKey = (typeof baseKey === 'string' ? { ns: baseKey } : baseKey) as any;
-		this.sds = sds;
-		this.nameParser = listNameParser;
+	constructor(listFactory: IListFactory) {
 		this.factory = listFactory;
 		this.listMap = {};
-		this.expireMS = expireMS || CacheManager.defaultExpireMS;
 	}
 
 	//获取列表
-	public async sel(where: any, page: number, pageSize: number = 0, order: 'ASC' | 'DESC' = 'ASC'): Promise<IListPageData> {
-		let listName = this.nameParser(where);
-		let list = this.listMap[listName];
-		if (!list) {
-			list = this.listMap[listName] = this.factory(where, { ...this.baseKey, listName }, this.sds, this.expireMS);
-		}
-		return list.sel(page, pageSize, order);
+	public async sel(
+		where: IListKey | any,
+		page: number,
+		pageSize: number = 0,
+		order: 'ASC' | 'DESC' = 'ASC',
+		fields?: IFields[],
+		forceDB?: boolean
+	): Promise<IListPageData> {
+		let id = `${where.ns}:${where.listName}`;
+		let list = this.listMap[id] || (this.listMap[id] = this.factory(where));
+		return list.sel(page, pageSize, order, fields, forceDB);
 	}
 
-	public async del(where: any, delDatas: boolean = false, onDataRefsNotFound?: () => Promise<any[]>) {
-		let listName = this.nameParser(where);
-		let list = this.listMap[listName];
-		if (!list) return;
-		return list.del(delDatas, onDataRefsNotFound);
+	public async del(key: IListKey, delDatas: boolean = false, onDataRefsNotFound?: () => Promise<any[]>) {
+		let id = `${key.ns}:${key.listName}`;
+		let list = this.listMap[id];
+		return !list ? undefined : list.del(delDatas, onDataRefsNotFound);
 	}
 
 	//trigger
 	public setTrigger(names: string | string[]) {
+		let ln = (body: any) => this.onTrigger(body);
 		if (typeof names === 'string') {
-			Trigger.set(names, this.onTrigger);
+			Trigger.set(names, ln);
 		} else {
 			for (let n of names) {
-				Trigger.set(n, this.onTrigger);
+				Trigger.set(n, ln);
 			}
 		}
 		return this;
 	}
-	private async onTrigger(where: any) {
-		let listName = this.nameParser(where);
-		let list = this.listMap[listName];
-		if (!list) return;
-		return list.del(false);
+	private async onTrigger(key: IListKey) {
+		let id = `${key.ns}:${key.listName}`;
+		let list = this.listMap[id];
+		if (list) {
+			list.del(false);
+		} else {
+			//尝试使用默认的缓存起删除列表文件
+			//TODO
+			let cache = CacheManager.getCache();
+			if (cache) {
+				await cache.del(cache.getKey('list', key.ns, key.listName));
+			}
+		}
 	}
 }
 

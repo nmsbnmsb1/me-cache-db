@@ -7,7 +7,7 @@ export class NullCache implements ICache {
 	constructor() {}
 
 	//common
-	public getKey(prefix: string, ns: string, pk: string) {
+	public getKey(prefix: string, ns: string, pk: any) {
 		return '';
 	}
 	public async exists(key: string) {

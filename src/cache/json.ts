@@ -1,5 +1,6 @@
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 import { CacheManager, ICache, ICachePipeline } from '../core/cache';
 
 function getPath(rootPath: string, key: string) {
@@ -32,6 +33,8 @@ function del(rootPath: string, key: string) {
 	} catch (e) {}
 }
 
+const md5Map: { [key: string]: string } = {};
+
 //ICache
 export class JSONCache implements ICache {
 	public static CID = 'json';
@@ -46,8 +49,19 @@ export class JSONCache implements ICache {
 	}
 
 	//common
-	public getKey(prefix: string, ns: string, pk: string) {
-		return `${prefix}_${ns}_${pk.replace(/\//g, '_')}`;
+	public getKey(prefix: string, ns: string, pk: any) {
+		let key = `${prefix}_${ns}_${pk}`;
+		if (`${pk}`.match(/^[0-9a-zA-Z_]+$/g)) {
+			return key;
+		}
+		if (md5Map[key]) {
+			return md5Map[key];
+		}
+		//
+		return (md5Map[key] = `${prefix}_${ns}_${crypto
+			.createHash('md5')
+			.update(Buffer.from(`${pk}`, 'utf8'))
+			.digest('hex')}`);
 	}
 	public async exists(key: string) {
 		return fs.existsSync(getPath(this.rootPath, key));

@@ -1,5 +1,5 @@
 export interface ICache {
-    getKey(prefix: string, ns: string, pk: string): string;
+    getKey(prefix: string, ns: string, pk: any): string;
     exists(key: string): Promise<boolean>;
     expire(key: string, ms: number): Promise<any>;
     del(key: string): Promise<any>;
