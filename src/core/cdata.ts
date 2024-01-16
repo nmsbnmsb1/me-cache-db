@@ -24,7 +24,7 @@ export interface IHandledStructDescriptor extends IDataStructDescriptor {
 	nas?: { [f: string]: string | false };
 	dataPkField: string;
 	//要去除的字段
-	dfields?: { [f: string]: boolean };
+	dfieldMap?: { [f: string]: boolean };
 }
 export function handleStructDescriptor(sd: any): IHandledStructDescriptor {
 	sd.__handled = true;
@@ -37,7 +37,7 @@ export function handleStructDescriptor(sd: any): IHandledStructDescriptor {
 	}
 	//
 	if (sd.fields) sd.neededFields = pickFields(sd);
-	if (sd.neededFields) sd.dfields = {};
+	if (sd.neededFields) sd.dfieldMap = {};
 	//
 	return sd;
 }
@@ -51,44 +51,6 @@ function getPipeline(pl: undefined | string | ICache | ICachePipeline) {
 	}
 	return pl as ICachePipeline;
 }
-//
-// export interface IDataTransformer {
-// 	extract?: (data: any) => IData;
-// 	extractAsync?: (data: any) => Promise<IData>;
-// 	build?: (data: IData) => any;
-// 	buildAsync?: (data: IData) => Promise<any>;
-// }
-// export const dataTransformer: IDataTransformer = {
-// 	extract: undefined,
-// 	extractAsync: undefined,
-// 	build: undefined,
-// 	buildAsync: undefined,
-// };
-// export type IEachDataTransformer =
-// 	| undefined
-// 	| false
-// 	| {
-// 			extract?: ((data: any) => IData) | false;
-// 			extractAsync?: ((data: any) => Promise<IData>) | false;
-// 			build?: ((data: IData) => any) | false;
-// 			buildAsync?: ((data: IData) => Promise<void>) | false;
-// 	  };
-// function eachTransform(data: any, name: 'extract' | 'build', dt?: IEachDataTransformer | false) {
-// 	//关闭处理器
-// 	if (dt === false || (dt && dt[name] === false)) return data;
-// 	//按照默认方式进行
-// 	if (dt === undefined || dt[name] === undefined) return dataTransformer[name] ? dataTransformer[name](data) : data;
-// 	//
-// 	return (dt[name] as any)(data);
-// }
-// async function eachTransformAsync(data: any, name: 'extractAsync' | 'buildAsync', dt?: IEachDataTransformer | false) {
-// 	//关闭处理器
-// 	if (dt === false || (dt && dt[name] === false)) return data;
-// 	//按照默认方式进行
-// 	if (dt === undefined || dt[name] === undefined) return dataTransformer[name] ? dataTransformer[name](data) : data;
-// 	//
-// 	return (dt[name] as any)(data);
-// }
 
 //
 export function cget(
@@ -114,7 +76,7 @@ export function cget(
 		//
 		let key = pl.getCache().getKey('data', hsd.ns, data[hsd.dataPkField]);
 		let { as, pkfield, neededFields } = hsd;
-		let { nas, dataPkField, dfields } = hsd;
+		let { nas, dataPkField, dfieldMap } = hsd;
 		pl.get(key, neededFields, (err: Error, values: any, valueConvetor: any) => {
 			if (!store.data) return;
 			//
@@ -164,17 +126,17 @@ export function cget(
 			}
 			//只有pkfield可能不在需要的字段列表里
 			//在get方法里，nas使用了pkfield做key,所以在dfields中也使用pkfield做key
-			if (neededFields && dfields[pkfield] !== false) {
-				if (dfields[pkfield]) {
+			if (neededFields && dfieldMap[pkfield] !== false) {
+				if (dfieldMap[pkfield]) {
 					//去除
 					delete data[dataPkField];
 				} else if (neededFields.indexOf(pkfield) < 0) {
 					//去除
-					dfields[pkfield] = true;
+					dfieldMap[pkfield] = true;
 					delete data[dataPkField];
 				} else {
 					//标记
-					dfields[pkfield] = false;
+					dfieldMap[pkfield] = false;
 				}
 			}
 		});
@@ -218,7 +180,7 @@ export function cset(
 		//
 		let key = pl.getCache().getKey('data', hsd.ns, data[hsd.dataPkField]);
 		let { as, neededFields } = hsd;
-		let { nas, dataPkField, dfields } = hsd;
+		let { nas, dataPkField, dfieldMap } = hsd;
 		//放在前面设置，后面可能会删除字段
 		if (dataRefs) {
 			dataRefs[dataPkField] = data[dataPkField];
@@ -253,17 +215,17 @@ export function cset(
 			}
 			pl.set(key, field, data[dataField]);
 			//如果需要返回ndata，去除无用的字段
-			if (neededFields && dfields[dataField] !== false) {
-				if (dfields[dataField]) {
+			if (neededFields && dfieldMap[dataField] !== false) {
+				if (dfieldMap[dataField]) {
 					//去除
 					delete data[dataField];
 				} else if (neededFields.indexOf(field) < 0) {
 					//去除
-					dfields[dataField] = true;
+					dfieldMap[dataField] = true;
 					delete data[dataField];
 				} else {
 					//标记
-					dfields[dataField] = false;
+					dfieldMap[dataField] = false;
 				}
 			}
 		}

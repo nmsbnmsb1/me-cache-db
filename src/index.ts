@@ -19,11 +19,4 @@ export function initCache(
 	if (defalutExpireMS !== undefined) {
 		CacheManager.defaultExpireMS = defalutExpireMS;
 	}
-	//
-	// if (options.dataTransformer) {
-	// 	CData.dataTransformer.extract = options.dataTransformer.extract;
-	// 	CData.dataTransformer.extractAsync = options.dataTransformer.extractAsync;
-	// 	CData.dataTransformer.build = options.dataTransformer.build;
-	// 	CData.dataTransformer.buildAsync = options.dataTransformer.buildAsync;
-	// }
 }

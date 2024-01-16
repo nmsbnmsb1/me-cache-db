@@ -39,7 +39,9 @@ export async function selIn(
 	expireMS?: number
 ) {
 	let datas = [];
-	for (let v of pkvalues) datas.push({ [pkfield]: v });
+	for (let v of pkvalues) {
+		datas.push({ [pkfield]: v });
+	}
 	return sel(cid, datas, [sd], selector, forceDB, expireMS);
 }
 
