@@ -9,7 +9,9 @@ export interface IDataKey {
 	ns: string;
 	pkfield: string;
 }
-export interface IDataStructDescriptor extends IDataKey, IFields {}
+export interface IDataStructDescriptor extends IDataKey, IFields {
+	//
+}
 // export interface IDataCorruptedInfo {
 // 	indexes: { [index: number | string]: IData };
 // 	pkfields: { [dataPkField: string]: any[] };
@@ -207,7 +209,6 @@ export function cset(
 	sds: IDataStructDescriptor[],
 	expireMS?: number,
 	dataRefs?: { [dataPkField: string]: any }
-	//
 ) {
 	for (let sd of sds) {
 		let hsd = sd as IHandledStructDescriptor;
@@ -329,7 +330,11 @@ export async function cdel(cid: undefined | string, key: string | { prefix?: str
 /**
  * 延长过期时间
  */
-export async function cexpire(cid: undefined | string, key: string | { prefix?: string; ns: string; pk: string }, ms: number) {
+export async function cexpire(
+	cid: undefined | string,
+	key: string | { prefix?: string; ns: string; pk: string },
+	ms: number
+) {
 	let cache = CacheManager.getCache(cid || CacheManager.defaultCID);
 	if (cache) {
 		if (typeof key === 'string') {

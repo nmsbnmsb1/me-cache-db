@@ -59,7 +59,7 @@ export class List implements IList {
 		let countKey = `${keyPrefix}.count`;
 		let pageDataKey = `${keyPrefix}.P${page}`;
 		//
-		//创建新的sds结构，放置多次调用使用同一个对象
+		//创建新的sds结构，防止多次调用使用同一个对象
 		let sds = [];
 		for (let i = 0; i < this.sds.length; i++) {
 			sds.push({ ...this.sds[i], ...(fields ? fields[i] : undefined) });

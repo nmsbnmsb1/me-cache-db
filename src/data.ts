@@ -28,6 +28,21 @@ export async function sel(
 	return ndata;
 }
 
+//select in
+export async function selIn(
+	cid: undefined | string,
+	pkfield: string,
+	pkvalues: any[],
+	sd: IDataStructDescriptor,
+	selector: () => Promise<IData[]>,
+	forceDB?: boolean,
+	expireMS?: number
+) {
+	let datas = [];
+	for (let v of pkvalues) datas.push({ [pkfield]: v });
+	return sel(cid, datas, [sd], selector, forceDB, expireMS);
+}
+
 //update
 export async function update(
 	cid: undefined | string,
