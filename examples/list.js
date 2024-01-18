@@ -23,14 +23,20 @@ initCache(RedisCache.CID, { [RedisCache.CID]: new RedisCache() });
 		//return { count: 0, datas: [] };
 		return { count: datas.length, datas: [{ ...datas[0] }] };
 	};
+	let build = (data) => {
+		return { data };
+	};
+	let buildAsync = async (data) => {
+		return { data };
+	};
 	//
-	let list = new List(RedisCache.CID, listKey, sds, selector);
+	let list = new List(RedisCache.CID, listKey, sds, selector, { build: buildAsync });
 	let result = await list.sel(1, 0, 'ASC');
-	console.log('result1', result);
+	console.log('result1', result.datas);
 	result = await list.sel(1, 1);
 	console.log('result2', result);
 	result = await list.sel(1, 1, 'DESC');
 	console.log('result3', result);
-	//
+
 	await list.del(true);
 })();

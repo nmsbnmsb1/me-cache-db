@@ -1,5 +1,5 @@
 import { ISqlOptions } from './core/db';
-import { IDataStructDescriptor, IData } from './core/cdata';
+import { IDataStructDescriptor, IData, DataTransformer } from './core/cdata';
 import { IFields } from './core/fields';
 export interface IListKey {
     ns: string;
@@ -12,7 +12,7 @@ export interface IListPageData {
     page: number;
     pageSize: number;
     totalPages: number;
-    datas: IData[];
+    datas: any[];
 }
 export type IListSelector = (page: number, pageSize: number, order: 'ASC' | 'DESC', sds: IListDataStructDescriptor[]) => Promise<{
     count: number;
@@ -29,8 +29,9 @@ export declare class List implements IList {
     private listKey;
     private sds;
     private selector;
+    private transform;
     private expireMS;
-    constructor(cid: undefined | string, key: IListKey, sds: IListDataStructDescriptor[], selector: IListSelector, expireMS?: number);
+    constructor(cid: undefined | string, key: IListKey, sds: IListDataStructDescriptor[], selector: IListSelector, transform?: boolean | DataTransformer, expireMS?: number);
     sel(page: number, pageSize: number, order?: 'ASC' | 'DESC', fields?: IFields[], forceDB?: boolean): Promise<IListPageData>;
     del(delDatas: boolean): Promise<any>;
 }

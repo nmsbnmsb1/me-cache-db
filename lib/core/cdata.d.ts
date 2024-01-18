@@ -1,7 +1,9 @@
 import { IFields } from './fields';
 import { ICache, ICachePipeline } from './cache';
+export declare const metadataField = "$metadata";
 export interface IData {
     [dataField: string]: any;
+    [metadataField]?: any;
 }
 export interface IDataKey {
     ns: string;
@@ -9,25 +11,23 @@ export interface IDataKey {
 }
 export interface IDataStructDescriptor extends IDataKey, IFields {
 }
-export interface IHandledStructDescriptor extends IDataStructDescriptor {
-    __handled: boolean;
-    nas?: {
-        [f: string]: string | false;
-    };
-    dataPkField: string;
-    dfields?: {
-        [f: string]: boolean;
-    };
-}
-export declare function handleStructDescriptor(sd: any): IHandledStructDescriptor;
-export declare function cget(pl: ICachePipeline, store: {
-    data: IData | IData[];
-}, index: number, data: IData, sds: IDataStructDescriptor[]): void;
-export declare function cgetData(cid: undefined | string | ICache | ICachePipeline, data: IData | IData[], sds: IDataStructDescriptor[]): Promise<IData | IData[]>;
-export declare function cset(pl: ICachePipeline, data: IData, sds: IDataStructDescriptor[], expireMS?: number, dataRefs?: {
+export type DataTransformer = (data: IData, metadatas?: any) => any | Promise<any>;
+export declare const Transformer: {
+    transform: DataTransformer;
+};
+export declare function cget(pl: ICachePipeline, context: {
+    done?: boolean;
+    data: any;
+    ps?: Promise<any>[];
+}, index: undefined | number | string, data: IData, sds: IDataStructDescriptor[], transform?: boolean | DataTransformer): void;
+export declare function cgetData(cid: undefined | string | ICache | ICachePipeline, data: IData | IData[], sds: IDataStructDescriptor[], transform?: boolean | DataTransformer): Promise<any>;
+export declare function cset(pl: ICachePipeline, context: {
+    data: any;
+    ps?: Promise<any>[];
+}, index: number | string, data: IData, sds: IDataStructDescriptor[], transform?: boolean | DataTransformer, dataRefs?: {
     [dataPkField: string]: any;
-}): void;
-export declare function csetData(cid: undefined | string | ICache | ICachePipeline, data: IData | IData[], sds: IDataStructDescriptor[], expireMS?: number): Promise<IData | IData[]>;
+}, expireMS?: number): Promise<void>;
+export declare function csetData(cid: undefined | string | ICache | ICachePipeline, data: IData | IData[], sds: IDataStructDescriptor[], transform?: boolean | DataTransformer, expireMS?: number): Promise<any>;
 export declare function cexists(cid: undefined | string, key: string | {
     prefix?: string;
     ns: string;

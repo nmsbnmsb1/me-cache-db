@@ -24,8 +24,14 @@ initCache(NullCache.CID, { [NullCache.CID]: new NullCache() });
 		//return { count: 0, datas: [] };
 		return { count: datas.length, datas: [{ ...datas[0] }] };
 	};
+	let build = (data) => {
+		return { data };
+	};
+	let buildAsync = async (data) => {
+		return { data };
+	};
 	//
-	let list = new List(NullCache.CID, listKey, sds, selector);
+	let list = new List(NullCache.CID, listKey, sds, selector, { build: buildAsync });
 	let result = await list.sel(1, 0, 'ASC');
 	console.log('result1', result);
 	result = await list.sel(1, 1, 'ASC');

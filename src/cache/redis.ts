@@ -4,12 +4,14 @@ import { ICache, ICachePipeline } from '../core/cache';
 function toRedisValue(v: any) {
 	if (v === null || v === undefined) return 'null';
 	if (typeof v === 'number') return `i/${v}`;
+	if (typeof v === 'object') return `j/${JSON.stringify(v)}`;
 	return v;
 }
 function getRedisValue(v: any) {
 	if (v === null || v === undefined) return undefined;
 	if (v === 'null') return null;
 	if (v.startsWith('i/')) return parseInt(v.substring(2));
+	if (v.startsWith('j/')) return JSON.parse(v.substring(2));
 	return v;
 }
 

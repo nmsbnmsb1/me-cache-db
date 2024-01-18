@@ -25,8 +25,15 @@ initCache(NullCache.CID, { [NullCache.CID]: new NullCache() });
 		);
 		return [{ ...data[0] }, { ...data[0] }];
 	};
+	let build = (data) => {
+		return { data };
+	};
+	let buildAsync = async (data) => {
+		return { data };
+	};
 	//
-	datas = await sel(NullCache.CID, datas, sds, selector);
+	//
+	datas = await sel(NullCache.CID, datas, sds, selector, { build: buildAsync });
 	//
 	console.log('result', datas);
 })();

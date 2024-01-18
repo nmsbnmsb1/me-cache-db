@@ -1,5 +1,5 @@
 import { CacheManager } from './core/cache';
-import { IDataStructDescriptor, IDataKey, cdel, cgetData, csetData, IData } from './core/cdata';
+import { IDataStructDescriptor, IDataKey, cdel, cgetData, cset, csetData, IData, DataTransformer } from './core/cdata';
 
 //--------------------数据操作--------------------
 //select
@@ -8,20 +8,21 @@ export async function sel(
 	data: IData | IData[],
 	sds: IDataStructDescriptor[],
 	selector: () => Promise<IData | IData[]>,
+	transform: boolean | DataTransformer = false,
 	forceDB?: boolean,
 	expireMS?: number
 ) {
-	let ndata: IData | IData[];
+	let ndata: any;
 	//先尝试从缓存中获取数据
 	if (!forceDB) {
-		ndata = await cgetData(cid, data, sds);
+		ndata = await cgetData(cid, data, sds, transform);
 	}
 	//
 	if (!ndata) {
 		//从数据库中sel
 		ndata = await selector();
 		if (ndata) {
-			csetData(cid, ndata, sds, expireMS);
+			ndata = await csetData(cid, ndata, sds, transform, expireMS);
 		}
 	}
 	//
@@ -35,6 +36,7 @@ export async function selIn(
 	pkvalues: any[],
 	sd: IDataStructDescriptor,
 	selector: () => Promise<IData[]>,
+	transform: boolean | DataTransformer = false,
 	forceDB?: boolean,
 	expireMS?: number
 ) {
@@ -42,7 +44,7 @@ export async function selIn(
 	for (let v of pkvalues) {
 		datas.push({ [pkfield]: v });
 	}
-	return sel(cid, datas, [sd], selector, forceDB, expireMS);
+	return sel(cid, datas, [sd], selector, transform, forceDB, expireMS);
 }
 
 //update
@@ -51,8 +53,8 @@ export async function update(
 	data: IData | IData[],
 	sd: IDataStructDescriptor,
 	updater: (data?: any) => Promise<boolean>,
+	handleCache: 'update' | 'del' = 'del',
 	expireMS?: number
-	//
 ) {
 	try {
 		await updater(data);
@@ -60,7 +62,37 @@ export async function update(
 		throw e;
 	}
 	//如果更新成功，更新缓存
-	await csetData(cid, data, [sd], expireMS);
+	let cache = CacheManager.getCache(cid);
+	if (!cache) return;
+	//如果是更新缓存
+	if (handleCache === 'update') {
+		let context = { data };
+		let sds = [sd];
+		if (!Array.isArray(data)) {
+			//先判断key是否存在
+			if (await cache.exists(cache.getKey('data', sd.ns, data[sd.pkfield]))) {
+				cset(cache.pipeline(), context, undefined, data, sds, false, undefined, expireMS);
+			}
+		} else {
+			let pl = cache.pipeline();
+			for (let i = 0; i < data.length; i++) {
+				//先判断key是否存在
+				if (await cache.exists(cache.getKey('data', sd.ns, data[i][sd.pkfield]))) {
+					cset(pl, context, i, data[i], sds, false, undefined, expireMS);
+				}
+			}
+		}
+	} else {
+		if (!Array.isArray(data)) {
+			cdel(cid, { prefix: 'data', ns: sd.ns, pk: data[sd.pkfield] });
+		} else {
+			let pl = cache.pipeline();
+			for (let d of data) {
+				pl.del(cache.getKey('data', sd.ns, d[sd.pkfield]));
+			}
+			pl.exec();
+		}
+	}
 }
 
 //del

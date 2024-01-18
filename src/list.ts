@@ -1,5 +1,5 @@
 import { ISqlOptions } from './core/db';
-import { IDataStructDescriptor, IHandledStructDescriptor, handleStructDescriptor, cgetData, cset, IData } from './core/cdata';
+import { IDataStructDescriptor, cgetData, cset, IData, DataTransformer } from './core/cdata';
 import { CacheManager, ICache } from './core/cache';
 import { Trigger } from './trigger';
 import { IFields, attachAs } from './core/fields';
@@ -15,7 +15,7 @@ export interface IListPageData {
 	page: number;
 	pageSize: number;
 	totalPages: number;
-	datas: IData[];
+	datas: any[];
 }
 export type IListSelector = (
 	page: number,
@@ -24,7 +24,13 @@ export type IListSelector = (
 	sds: IListDataStructDescriptor[]
 ) => Promise<{ count: number; datas: IData[] }>;
 export interface IList {
-	sel(page: number, pageSize: number, order: 'ASC' | 'DESC', fields?: IFields[], forceDB?: boolean): Promise<IListPageData>;
+	sel(
+		page: number,
+		pageSize: number,
+		order: 'ASC' | 'DESC',
+		fields?: IFields[],
+		forceDB?: boolean
+	): Promise<IListPageData>;
 	del(delDatas: boolean, onDataRefsNotFound?: () => Promise<any[]>): Promise<void>;
 }
 
@@ -36,6 +42,7 @@ export class List implements IList {
 	private listKey: string;
 	private sds: IListDataStructDescriptor[];
 	private selector: IListSelector;
+	private transform: boolean | DataTransformer;
 	private expireMS: number;
 
 	constructor(
@@ -43,8 +50,8 @@ export class List implements IList {
 		key: IListKey,
 		sds: IListDataStructDescriptor[],
 		selector: IListSelector,
+		transform: boolean | DataTransformer = false,
 		expireMS?: number
-		//
 	) {
 		this.cid = cid;
 		this.cache = CacheManager.getCache(this.cid);
@@ -52,20 +59,28 @@ export class List implements IList {
 		this.listKey = this.cache.getKey('list', key.ns, key.listName);
 		this.sds = sds;
 		this.selector = selector;
+		this.transform = transform;
 		this.expireMS = expireMS || CacheManager.defaultExpireMS;
 	}
-	public async sel(page: number, pageSize: number, order: 'ASC' | 'DESC' = 'ASC', fields?: IFields[], forceDB?: boolean): Promise<IListPageData> {
+	public async sel(
+		page: number,
+		pageSize: number,
+		order: 'ASC' | 'DESC' = 'ASC',
+		fields?: IFields[],
+		forceDB?: boolean
+	): Promise<IListPageData> {
 		let keyPrefix = `${pageSize}.${order}`;
 		let countKey = `${keyPrefix}.count`;
 		let pageDataKey = `${keyPrefix}.P${page}`;
 		//
+		let count = 0;
+		let datas;
 		//创建新的sds结构，防止多次调用使用同一个对象
 		let sds = [];
 		for (let i = 0; i < this.sds.length; i++) {
 			sds.push({ ...this.sds[i], ...(fields ? fields[i] : undefined) });
 		}
-		let count = 0;
-		let dataRefs;
+		//
 		if (!forceDB) {
 			//尝试查询缓存
 			let lcdata = await this.cache.get(this.listKey, [countKey, pageDataKey]);
@@ -77,48 +92,55 @@ export class List implements IList {
 					}
 				}
 				if (lcdata[pageDataKey]) {
-					dataRefs = JSON.parse(lcdata[pageDataKey]);
+					datas = lcdata[pageDataKey];
 				}
-				if (count && dataRefs) {
-					let datas = await cgetData(this.cid, dataRefs, sds);
+				if (count && datas) {
+					datas = await cgetData(this.cid, datas, sds, this.transform);
 					if (datas) {
 						return {
 							count,
 							page,
 							pageSize,
 							totalPages: pageSize <= 0 ? 1 : Math.ceil(count / pageSize),
-							datas: datas as any,
+							datas: datas as any[],
 						};
 					}
+					//
+					datas = undefined;
 				}
 			}
 		}
 		//执行到这里，需要通过调用数据库获取数据
-		let data = await this.selector(page, pageSize, order, sds);
+		let pageData = await this.selector(page, pageSize, order, sds);
 		//全部写入缓存
 		let pl = this.cache.pipeline();
-		pl.set(this.listKey, countKey, data.count);
+		pl.set(this.listKey, countKey, pageData.count);
 		//
-		if (data.count > 0) {
-			dataRefs = [];
-			for (let i = 0; i < data.datas.length; i++) {
-				let dataRef = {};
-				cset(pl, data.datas[i], sds, this.expireMS, dataRef);
-				dataRefs.push(dataRef);
-			}
-			pl.set(this.listKey, pageDataKey, JSON.stringify(dataRefs));
-		} else {
+		let context: any;
+		if (pageData.count <= 0) {
 			pl.set(this.listKey, pageDataKey, `[]`);
+		} else {
+			context = { data: pageData.datas };
+			let dataRefs = [];
+			for (let i = 0; i < pageData.datas.length; i++) {
+				let dref = {};
+				cset(pl, context, i, pageData.datas[i], sds, this.transform, dref, this.expireMS);
+				dataRefs.push(dref);
+			}
+			pl.set(this.listKey, pageDataKey, dataRefs);
 		}
 		pl.expire(this.listKey, this.expireMS);
-		pl.exec();
+		await pl.exec();
+		if (context?.ps) {
+			await Promise.all(context.ps);
+		}
 		//
 		return {
-			count: data.count,
+			count: pageData.count,
 			page,
 			pageSize,
-			totalPages: pageSize <= 0 ? 1 : Math.ceil(data.count / pageSize),
-			datas: data.datas,
+			totalPages: pageSize <= 0 ? 1 : Math.ceil(pageData.count / pageSize),
+			datas: pageData.datas,
 		};
 	}
 	public async del(delDatas: boolean) {
@@ -136,12 +158,11 @@ export class List implements IList {
 			//
 			for (let key in data) {
 				let val = data[key];
-				if (!(typeof val === 'string' && val.startsWith('[{'))) continue;
+				if (!Array.isArray(val)) continue;
 				//
-				let dataRefs = JSON.parse(val);
-				for (let dataRef of dataRefs) {
+				for (let data of val) {
 					for (let sd of sds) {
-						pl.del(this.cache.getKey('data', sd.ns, dataRef[sd.dataPkField]));
+						pl.del(this.cache.getKey('data', sd.ns, data[sd.dataPkField]));
 					}
 				}
 			}

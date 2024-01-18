@@ -27,9 +27,15 @@ initCache(JSONCache.CID, { [JSONCache.CID]: new JSONCache(path.resolve('./exampl
 		);
 		return [{ ...data[0] }, { ...data[0] }];
 	};
+	let build = (data) => {
+		return { data };
+	};
+	let buildAsync = async (data) => {
+		return { data };
+	};
 	//
 	//
-	datas = await sel(JSONCache.CID, datas, sds, selector);
+	datas = await sel(JSONCache.CID, datas, sds, selector, { build: buildAsync });
 	//
 	console.log('result', datas);
 })();

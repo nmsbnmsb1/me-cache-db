@@ -84,7 +84,7 @@ export interface IFieldsModifier {
 export interface IFields extends IAs {
 	fields?: string | string[];
 	fieldsModifier?: IFieldsModifier;
-	neededFields?: string[];
+	needFields?: string[];
 }
 // export function pickFields(fields: string, modifier: IFieldsModifier): string[];
 // export function pickFields(fields: string[], modifier: IFieldsModifier): string[];

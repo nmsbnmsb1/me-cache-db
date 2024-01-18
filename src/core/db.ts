@@ -60,14 +60,14 @@ export function getLeftJoinSql(options: ISqlOptions[]) {
 	let whereSql = '';
 	let orderSql = '';
 	for (let option of options) {
-		let { as, neededFields } = option;
-		if (!neededFields) {
-			option.neededFields = pickFields(option);
+		let { as, needFields } = option;
+		if (!needFields) {
+			option.needFields = pickFields(option);
 		}
 		let { tableName, on, where, order } = option;
 		//select
 		{
-			let nfields = [...neededFields];
+			let nfields = [...needFields];
 			if (as) {
 				for (let i = 0; i < nfields.length; i++) {
 					nfields[i] = `${as}.${nfields[i]} as ${as}_${nfields[i]}`;
@@ -86,7 +86,9 @@ export function getLeftJoinSql(options: ISqlOptions[]) {
 				for (let field in on) {
 					//a.uuid = b.uuid
 					let { tableName, onField } = on[field];
-					fromSql = `(${fromSql}) left join ${tsql} on ${asPrefix}${field} = ${!tableMap[tableName].as ? '' : `${tableMap[tableName].as}.`}${onField}`;
+					fromSql = `(${fromSql}) left join ${tsql} on ${asPrefix}${field} = ${
+						!tableMap[tableName].as ? '' : `${tableMap[tableName].as}.`
+					}${onField}`;
 				}
 			}
 		}

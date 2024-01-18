@@ -27,8 +27,14 @@ initCache(RedisCache.CID, { [RedisCache.CID]: new RedisCache() });
 		//return [];
 		return [{ ...data[0] }, { ...data[0] }];
 	};
+	let build = (data) => {
+		return { data };
+	};
+	let buildAsync = async (data) => {
+		return { data };
+	};
 	//
-	datas = await sel(RedisCache.CID, datas, sds, selector);
+	datas = await sel(RedisCache.CID, datas, sds, selector, { build: buildAsync });
 	//
 	console.log('result', datas);
 })();
