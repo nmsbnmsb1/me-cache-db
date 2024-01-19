@@ -8,18 +8,10 @@ export * from './trigger';
 
 //初始化
 import { CacheManager, ICache } from './core/cache';
-import { DataTransformer, Transformer } from './core/cdata';
-export function initCache(
-	defaultCID: string,
-	cacheMap: { [cid: string]: ICache },
-	defalutExpireMS?: number,
-	defaultTransform?: DataTransformer
-) {
+export function initCache(defaultCID: string, cacheMap: { [cid: string]: ICache }, defalutExpireMS?: number) {
 	CacheManager.defaultCID = defaultCID;
 	CacheManager.cacheMap = cacheMap;
 	if (defalutExpireMS !== undefined) {
 		CacheManager.defaultExpireMS = defalutExpireMS;
 	}
-	//
-	Transformer.transform = defaultTransform;
 }

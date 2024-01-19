@@ -31,7 +31,7 @@ export declare class List implements IList {
     private selector;
     private transform;
     private expireMS;
-    constructor(cid: undefined | string, key: IListKey, sds: IListDataStructDescriptor[], selector: IListSelector, transform?: boolean | DataTransformer, expireMS?: number);
+    constructor(cid: undefined | string, key: IListKey, sds: IListDataStructDescriptor[], selector: IListSelector, transform?: DataTransformer, expireMS?: number);
     sel(page: number, pageSize: number, order?: 'ASC' | 'DESC', fields?: IFields[], forceDB?: boolean): Promise<IListPageData>;
     del(delDatas: boolean): Promise<any>;
 }

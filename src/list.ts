@@ -42,7 +42,7 @@ export class List implements IList {
 	private listKey: string;
 	private sds: IListDataStructDescriptor[];
 	private selector: IListSelector;
-	private transform: boolean | DataTransformer;
+	private transform: DataTransformer;
 	private expireMS: number;
 
 	constructor(
@@ -50,7 +50,7 @@ export class List implements IList {
 		key: IListKey,
 		sds: IListDataStructDescriptor[],
 		selector: IListSelector,
-		transform: boolean | DataTransformer = false,
+		transform?: DataTransformer,
 		expireMS?: number
 	) {
 		this.cid = cid;
@@ -216,16 +216,19 @@ export class ListSet {
 		}
 		return this;
 	}
-	private async onTrigger(key: IListKey) {
-		let id = `${key.ns}:${key.listName}`;
-		let list = this.listMap[id];
-		if (list) {
-			list.del(false);
-		} else {
-			//尝试使用默认的缓存起删除列表文件
-			//TODO
-			let cache = CacheManager.getCache();
-			if (cache) {
+	private async onTrigger(keys: IListKey | IListKey[]) {
+		if (!Array.isArray(keys)) keys = [keys];
+		//
+		let cache: any;
+		for (let key of keys) {
+			let id = `${key.ns}:${key.listName}`;
+			let list = this.listMap[id];
+			if (list) {
+				list.del(false);
+			} else {
+				//TODO
+				//尝试使用默认的缓存起删除列表文件
+				if (!cache) cache = CacheManager.getCache();
 				await cache.del(cache.getKey('list', key.ns, key.listName));
 			}
 		}

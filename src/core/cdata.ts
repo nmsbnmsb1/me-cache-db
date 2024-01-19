@@ -2,12 +2,12 @@ import { IFields, attachAs, cutAs, hasAs, pickFields } from './fields';
 import { CacheManager, ICache, ICachePipeline } from './cache';
 
 //metadata专属字段名
-export const metadataField = '$metadata';
+export const MetadataField = '$metadata';
 
 //interfaces
 export interface IData {
 	[dataField: string]: any;
-	[metadataField]?: any;
+	[MetadataField]?: any;
 }
 export interface IDataKey {
 	ns: string;
@@ -21,9 +21,9 @@ export interface IDataStructDescriptor extends IDataKey, IFields {
 // 	pkfields: { [dataPkField: string]: any[] };
 // }
 export type DataTransformer = (data: IData, metadatas?: any) => any | Promise<any>;
-export const Transformer: { transform: DataTransformer } = {
-	transform: undefined,
-};
+// export const Transformer: { transform: DataTransformer } = {
+// 	transform: undefined,
+// };
 //辅助方法
 interface IHandledStructDescriptor extends IDataStructDescriptor {
 	__handled: boolean;
@@ -48,7 +48,7 @@ function handleStructDescriptor(sd: any, transform: boolean): IHandledStructDesc
 	if (sd.fields) sd.needFields = pickFields(sd);
 	if (sd.needFields) sd.dfieldMap = {};
 	if (sd.needFields) {
-		sd.allwantFields = !transform ? sd.needFields : sd.needFields.concat(metadataField);
+		sd.allwantFields = !transform ? sd.needFields : sd.needFields.concat(MetadataField);
 	}
 	//
 	return sd;
@@ -71,7 +71,7 @@ export function cget(
 	index: undefined | number | string,
 	data: IData,
 	sds: IDataStructDescriptor[],
-	transform: boolean | DataTransformer = false
+	transform?: DataTransformer
 ) {
 	let readCount = 0;
 	let metadatas: any = !transform ? undefined : {};
@@ -96,7 +96,7 @@ export function cget(
 			} else {
 				let fn = (field: string, value: any) => {
 					value = !valueConvetor ? value : valueConvetor(value);
-					if (value === undefined && field !== metadataField) {
+					if (value === undefined && field !== MetadataField) {
 						return false;
 					}
 					//转换data字段
@@ -107,7 +107,7 @@ export function cget(
 						dataField = nas[field] || (nas[field] = attachAs(as, field));
 					}
 					//
-					if (field === metadataField) {
+					if (field === MetadataField) {
 						if (metadatas) metadatas[dataField] = value;
 					} else {
 						data[dataField] = value;
@@ -158,7 +158,7 @@ export function cget(
 			//
 			readCount++;
 			if (readCount >= sds.length) {
-				let ndata = !transform ? data : (transform === true ? Transformer.transform : transform)(data, metadatas);
+				let ndata = !transform ? data : (transform as DataTransformer)(data, metadatas);
 				//如果result不是Priomise
 				if (!ndata.then) {
 					context.data = index === undefined ? ndata : (context.data[index] = ndata);
@@ -175,7 +175,7 @@ export async function cgetData(
 	cid: undefined | string | ICache | ICachePipeline,
 	data: IData | IData[],
 	sds: IDataStructDescriptor[],
-	transform: boolean | DataTransformer = false
+	transform?: DataTransformer
 ): Promise<any> {
 	let pl = getPipeline(cid);
 	if (!pl) return;
@@ -204,7 +204,7 @@ export async function cset(
 	index: number | string,
 	data: IData,
 	sds: IDataStructDescriptor[],
-	transform: boolean | DataTransformer = false,
+	transform?: DataTransformer,
 	dataRefs?: { [dataPkField: string]: any },
 	expireMS?: number
 ) {
@@ -252,8 +252,8 @@ export async function cset(
 			}
 			pl.set(key, field, data[dataField]);
 			//
-			if (field === metadataField) {
-				metadatas[dataField] = data[dataField];
+			if (field === MetadataField) {
+				if (metadatas) metadatas[dataField] = data[dataField];
 				delete data[dataField];
 			}
 			//如果需要返回ndata，去除无用的字段
@@ -277,7 +277,7 @@ export async function cset(
 		//console.log('set', hsd);
 	}
 	//
-	let ndata = !transform ? data : (transform === true ? Transformer.transform : transform)(data, metadatas);
+	let ndata = !transform ? data : (transform as DataTransformer)(data, metadatas);
 	//如果result不是Priomise
 	if (!ndata.then) {
 		context.data = index === undefined ? ndata : (context.data[index] = ndata);
@@ -291,7 +291,7 @@ export async function csetData(
 	cid: undefined | string | ICache | ICachePipeline,
 	data: IData | IData[],
 	sds: IDataStructDescriptor[],
-	transform: boolean | DataTransformer = false,
+	transform?: DataTransformer,
 	expireMS?: number
 ): Promise<any> {
 	let pl = getPipeline(cid);

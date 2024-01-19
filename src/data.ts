@@ -8,7 +8,7 @@ export async function sel(
 	data: IData | IData[],
 	sds: IDataStructDescriptor[],
 	selector: () => Promise<IData | IData[]>,
-	transform: boolean | DataTransformer = false,
+	transform?: DataTransformer,
 	forceDB?: boolean,
 	expireMS?: number
 ) {
@@ -36,7 +36,7 @@ export async function selIn(
 	pkvalues: any[],
 	sd: IDataStructDescriptor,
 	selector: () => Promise<IData[]>,
-	transform: boolean | DataTransformer = false,
+	transform?: DataTransformer,
 	forceDB?: boolean,
 	expireMS?: number
 ) {
@@ -68,20 +68,23 @@ export async function update(
 	if (handleCache === 'update') {
 		let context = { data };
 		let sds = [sd];
+		let pl;
 		if (!Array.isArray(data)) {
 			//先判断key是否存在
 			if (await cache.exists(cache.getKey('data', sd.ns, data[sd.pkfield]))) {
-				cset(cache.pipeline(), context, undefined, data, sds, false, undefined, expireMS);
+				if (!pl) pl = cache.pipeline();
+				cset(pl, context, undefined, data, sds, undefined, undefined, expireMS);
 			}
 		} else {
-			let pl = cache.pipeline();
 			for (let i = 0; i < data.length; i++) {
 				//先判断key是否存在
 				if (await cache.exists(cache.getKey('data', sd.ns, data[i][sd.pkfield]))) {
-					cset(pl, context, i, data[i], sds, false, undefined, expireMS);
+					if (!pl) pl = cache.pipeline();
+					cset(pl, context, i, data[i], sds, undefined, undefined, expireMS);
 				}
 			}
 		}
+		if (pl) pl.exec();
 	} else {
 		if (!Array.isArray(data)) {
 			cdel(cid, { prefix: 'data', ns: sd.ns, pk: data[sd.pkfield] });
