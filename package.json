@@ -9,8 +9,8 @@
 		"ioredis": "^5.3.2"
 	},
 	"devDependencies": {
-		"@types/node": "^20.11.4",
-		"prettier": "^3.2.2",
+		"@types/node": "^20.11.10",
+		"prettier": "^3.2.4",
 		"typescript": "^5.3.3"
 	}
 }

@@ -161,10 +161,10 @@ export function cget(
 				let ndata = !transform ? data : (transform as DataTransformer)(data, metadatas);
 				//如果result不是Priomise
 				if (!ndata.then) {
-					context.data = index === undefined ? ndata : (context.data[index] = ndata);
+					index === undefined ? (context.data = ndata) : (context.data[index] = ndata);
 				} else {
 					(context.ps || (context.ps = [])).push(
-						ndata.then((ndata: any) => (context.data = index === undefined ? ndata : (context.data[index] = ndata)))
+						ndata.then((ndata: any) => (index === undefined ? (context.data = ndata) : (context.data[index] = ndata)))
 					);
 				}
 			}
@@ -280,10 +280,10 @@ export async function cset(
 	let ndata = !transform ? data : (transform as DataTransformer)(data, metadatas);
 	//如果result不是Priomise
 	if (!ndata.then) {
-		context.data = index === undefined ? ndata : (context.data[index] = ndata);
+		index === undefined ? (context.data = ndata) : (context.data[index] = ndata);
 	} else {
 		(context.ps || (context.ps = [])).push(
-			ndata.then((ndata: any) => (context.data = index === undefined ? ndata : (context.data[index] = ndata)))
+			ndata.then((ndata: any) => (index === undefined ? (context.data = ndata) : (context.data[index] = ndata)))
 		);
 	}
 }

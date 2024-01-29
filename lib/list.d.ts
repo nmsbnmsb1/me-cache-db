@@ -19,7 +19,7 @@ export type IListSelector = (page: number, pageSize: number, order: 'ASC' | 'DES
     datas: IData[];
 }>;
 export interface IList {
-    sel(page: number, pageSize: number, order: 'ASC' | 'DESC', fields?: IFields[], forceDB?: boolean): Promise<IListPageData>;
+    sel(page: number, pageSize: number, order: 'ASC' | 'DESC', fields?: IFields[], raw?: boolean, forceDB?: boolean): Promise<IListPageData>;
     del(delDatas: boolean, onDataRefsNotFound?: () => Promise<any[]>): Promise<void>;
 }
 export declare class List implements IList {
@@ -32,7 +32,7 @@ export declare class List implements IList {
     private transform;
     private expireMS;
     constructor(cid: undefined | string, key: IListKey, sds: IListDataStructDescriptor[], selector: IListSelector, transform?: DataTransformer, expireMS?: number);
-    sel(page: number, pageSize: number, order?: 'ASC' | 'DESC', fields?: IFields[], forceDB?: boolean): Promise<IListPageData>;
+    sel(page: number, pageSize: number, order?: 'ASC' | 'DESC', fields?: IFields[], raw?: boolean, forceDB?: boolean): Promise<IListPageData>;
     del(delDatas: boolean): Promise<any>;
 }
 export type IListFactory = (where: IListKey | any) => IList;
@@ -40,7 +40,7 @@ export declare class ListSet {
     private factory;
     private listMap;
     constructor(listFactory: IListFactory);
-    sel(where: IListKey | any, page: number, pageSize?: number, order?: 'ASC' | 'DESC', fields?: IFields[], forceDB?: boolean): Promise<IListPageData>;
+    sel(where: IListKey | any, page: number, pageSize?: number, order?: 'ASC' | 'DESC', fields?: IFields[], raw?: boolean, forceDB?: boolean): Promise<IListPageData>;
     del(key: IListKey, delDatas?: boolean, onDataRefsNotFound?: () => Promise<any[]>): Promise<void>;
     setTrigger(names: string | string[]): this;
     private onTrigger;

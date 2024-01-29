@@ -29,6 +29,7 @@ export interface IList {
 		pageSize: number,
 		order: 'ASC' | 'DESC',
 		fields?: IFields[],
+		raw?: boolean,
 		forceDB?: boolean
 	): Promise<IListPageData>;
 	del(delDatas: boolean, onDataRefsNotFound?: () => Promise<any[]>): Promise<void>;
@@ -67,6 +68,7 @@ export class List implements IList {
 		pageSize: number,
 		order: 'ASC' | 'DESC' = 'ASC',
 		fields?: IFields[],
+		raw?: boolean,
 		forceDB?: boolean
 	): Promise<IListPageData> {
 		let keyPrefix = `${pageSize}.${order}`;
@@ -95,7 +97,7 @@ export class List implements IList {
 					datas = lcdata[pageDataKey];
 				}
 				if (count && datas) {
-					datas = await cgetData(this.cid, datas, sds, this.transform);
+					datas = await cgetData(this.cid, datas, sds, raw === false ? this.transform : undefined);
 					if (datas) {
 						return {
 							count,
@@ -124,7 +126,7 @@ export class List implements IList {
 			let dataRefs = [];
 			for (let i = 0; i < pageData.datas.length; i++) {
 				let dref = {};
-				cset(pl, context, i, pageData.datas[i], sds, this.transform, dref, this.expireMS);
+				cset(pl, context, i, pageData.datas[i], sds, raw === false ? this.transform : undefined, dref, this.expireMS);
 				dataRefs.push(dref);
 			}
 			pl.set(this.listKey, pageDataKey, dataRefs);
@@ -191,11 +193,12 @@ export class ListSet {
 		pageSize: number = 0,
 		order: 'ASC' | 'DESC' = 'ASC',
 		fields?: IFields[],
+		raw?: boolean,
 		forceDB?: boolean
 	): Promise<IListPageData> {
 		let id = `${where.ns}:${where.listName}`;
 		let list = this.listMap[id] || (this.listMap[id] = this.factory(where));
-		return list.sel(page, pageSize, order, fields, forceDB);
+		return list.sel(page, pageSize, order, fields, raw, forceDB);
 	}
 
 	public async del(key: IListKey, delDatas: boolean = false, onDataRefsNotFound?: () => Promise<any[]>) {
