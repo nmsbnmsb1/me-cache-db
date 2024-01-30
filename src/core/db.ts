@@ -1,5 +1,6 @@
 import { IFields, pickFields } from './fields';
 
+export type IQuery = { query(sql: string): Promise<any> } | ((sql: string) => Promise<any>);
 //--------------------------------------------------------------------------------
 //CommUtils
 export function toBoolean(b: any) {
@@ -48,6 +49,32 @@ export interface ISqlOptions extends IFields {
 	where: ISqlStatement | IWhere;
 	order?: ISqlStatement | IOrder;
 }
+//分页查询
+export async function doPage(page: number, pageSize: number, countField: string, sql: string, e: IQuery) {
+	let query = typeof e === 'function' ? e : e.query;
+	let totalCount;
+	let rs;
+	//如果分页查询
+	if (pageSize > 0) {
+		let countData = await query(`select COUNT(${countField}) as count from (${sql}) as a`);
+		if (!countData || countData.length === 0 || countData[0].count <= 0) {
+			totalCount = 0;
+		} else {
+			totalCount = countData[0].count;
+			rs = await query(`${sql} limit ${(page - 1) * pageSize},${pageSize}`);
+		}
+	} else {
+		rs = await query(`${sql}`);
+		totalCount = rs.length;
+	}
+	return {
+		count: totalCount,
+		page,
+		pageSize,
+		totalPages: pageSize <= 0 ? 1 : Math.ceil(totalCount / pageSize),
+		datas: rs || [],
+	};
+}
 //各种生成sql语句
 export function getLeftJoinSql(options: ISqlOptions[]) {
 	let tableMap: { [tname: string]: ISqlOptions } = {};
@@ -62,24 +89,24 @@ export function getLeftJoinSql(options: ISqlOptions[]) {
 	for (let option of options) {
 		let { as, needFields } = option;
 		if (!needFields) {
-			option.needFields = pickFields(option);
+			needFields = option.needFields = pickFields(option);
 		}
 		let { tableName, on, where, order } = option;
 		//select
 		{
-			let nfields = [...needFields];
-			if (as) {
-				for (let i = 0; i < nfields.length; i++) {
-					nfields[i] = `${as}.${nfields[i]} as ${as}_${nfields[i]}`;
+			if (!as) {
+				selectSql = `${!selectSql ? '' : ','}"${needFields.join(`","`)}"`;
+			} else {
+				for (let i = 0; i < needFields.length; i++) {
+					selectSql += `${!selectSql ? '' : ','}${as}.${needFields[i]} as "${as}_${needFields[i]}"`;
 				}
 			}
-			selectSql = `${!selectSql ? '' : ','}${nfields.join(',')}`;
 		}
 		//
 		let asPrefix = !as ? '' : `${as}.`;
 		//from
 		{
-			let tsql = `${tableName}${!as ? '' : ` as ${as}`}`;
+			let tsql = `"${tableName}"${!as ? '' : ` as ${as}`}`;
 			if (!fromSql) {
 				fromSql = tsql;
 			} else {
@@ -108,6 +135,8 @@ export function getLeftJoinSql(options: ISqlOptions[]) {
 						wsql = `${asPrefix}${field}`;
 						if (Array.isArray(v)) {
 							wsql = `${wsql} in ('${v.join("','")}')`;
+						} else if (typeof v !== 'string') {
+							wsql = `${wsql}=${v}`;
 						} else {
 							wsql = `${wsql}='${v}'`;
 						}
