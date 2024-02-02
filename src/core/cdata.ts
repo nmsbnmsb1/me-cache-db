@@ -342,6 +342,21 @@ export async function cdel(cid: undefined | string, key: string | { prefix?: str
 		}
 	}
 }
+export async function cdelData(
+	cid: undefined | string | ICache | ICachePipeline,
+	key: { prefix?: string; ns: string; pkfield?: string },
+	datas: any[]
+) {
+	let pl = getPipeline(cid);
+	if (!pl) return;
+	//
+	let { prefix, ns, pkfield } = key;
+	for (let d of datas) {
+		pl.del(pl.getCache().getKey(prefix || 'data', ns, !pkfield ? d : d[pkfield]));
+	}
+	//
+	return pl.exec();
+}
 
 /**
  * 延长过期时间

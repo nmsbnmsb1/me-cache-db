@@ -35,6 +35,11 @@ export declare function cdel(cid: undefined | string, key: string | {
     ns: string;
     pk: string;
 }): Promise<any>;
+export declare function cdelData(cid: undefined | string | ICache | ICachePipeline, key: {
+    prefix?: string;
+    ns: string;
+    pkfield?: string;
+}, datas: any[]): Promise<any>;
 export declare function cexpire(cid: undefined | string, key: string | {
     prefix?: string;
     ns: string;
