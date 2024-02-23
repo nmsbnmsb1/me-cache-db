@@ -1,6 +1,6 @@
 import { IFields } from './fields';
 import { ICache, ICachePipeline } from './cache';
-import { IDataKey } from './key';
+import { IDataKey } from './keys';
 export interface IData {
     [dataField: string]: any;
 }

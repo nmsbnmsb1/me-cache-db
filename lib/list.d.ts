@@ -1,4 +1,4 @@
-import { INameKey } from './core/key';
+import { INameKey } from './core/keys';
 import { IFields } from './core/fields';
 import { IPageData, ISqlOptions } from './core/db';
 import { IDataDescriptor, IData, DataTransformer } from './core/cdata';

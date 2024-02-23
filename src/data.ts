@@ -1,6 +1,6 @@
 import { CacheManager } from './core/cache';
 import { IDataDescriptor, cdel, cgetData, cset, csetData, IData, DataTransformer } from './core/cdata';
-import { IDataKey } from './core/key';
+import { IDataKey } from './core/keys';
 
 //--------------------数据操作--------------------
 //select

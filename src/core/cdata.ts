@@ -1,6 +1,6 @@
 import { IFields, attachAs, cutAs, hasAs, pickFields } from './fields';
 import { CacheManager, ICache, ICachePipeline } from './cache';
-import { IDataKey } from './key';
+import { IDataKey } from './keys';
 
 //interfaces
 export interface IData {
