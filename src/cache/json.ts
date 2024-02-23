@@ -49,9 +49,9 @@ export class JSONCache implements ICache {
 	}
 
 	//common
-	public getKey(prefix: string, ns: string, pk: any) {
-		let key = `${prefix}_${ns}_${pk}`;
-		if (`${pk}`.match(/^[0-9a-zA-Z_]+$/g)) {
+	public getKey(prefix: string, ns: string, nn: any) {
+		let key = `${prefix}_${ns}_${nn}`;
+		if (`${nn}`.match(/^[0-9a-zA-Z_]+$/g)) {
 			return key;
 		}
 		if (md5Map[key]) {
@@ -60,7 +60,7 @@ export class JSONCache implements ICache {
 		//
 		return (md5Map[key] = `${prefix}_${ns}_${crypto
 			.createHash('md5')
-			.update(Buffer.from(`${pk}`, 'utf8'))
+			.update(Buffer.from(`${nn}`, 'utf8'))
 			.digest('hex')}`);
 	}
 	public async exists(key: string) {

@@ -4,7 +4,7 @@ export declare class RedisCache implements ICache {
     static CID: string;
     private redis;
     constructor(redis?: Redis);
-    getKey(prefix: string, ns: string, pk: any): string;
+    getKey(prefix: string, ns: string, nn: any): string;
     exists(key: string): Promise<boolean>;
     expire(key: string, ms: number): Promise<number>;
     del(key: string): Promise<number>;

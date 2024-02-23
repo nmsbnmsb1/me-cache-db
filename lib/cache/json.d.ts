@@ -3,7 +3,7 @@ export declare class JSONCache implements ICache {
     static CID: string;
     private rootPath;
     constructor(rootPath: string);
-    getKey(prefix: string, ns: string, pk: any): string;
+    getKey(prefix: string, ns: string, nn: any): string;
     exists(key: string): Promise<boolean>;
     expire(key: string, ms: number): Promise<void>;
     del(key: string): Promise<void>;

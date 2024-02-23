@@ -1,6 +1,5 @@
 import { IFields, pickFields } from './fields';
 
-export type IQuery = { query(sql: string): Promise<any> } | ((sql: string) => Promise<any>);
 //--------------------------------------------------------------------------------
 //CommUtils
 export function toBoolean(b: any) {
@@ -36,22 +35,16 @@ export function sanitizeSQL(sql: string) {
 	return sql.replace(/[\r\n]/g, '').replace(/\s+/g, ' ');
 }
 
-//----------------------------------------Sel----------------------------------------
-//Fields
-export type ISqlStatement = string | (() => string);
-//a.uuid = b.uuid
-export type IOn = { [field: string]: { tableName: string; onField: string } };
-export type IWhere = { [field: string]: any; __set: string };
-export type IOrder = { [field: string]: 'asc' | 'ASC' | 'desc' | 'DESC' | string; __set: string };
-export interface ISqlOptions extends IFields {
-	tableName: string;
-	on: IOn;
-	where: ISqlStatement | IWhere;
-	order?: ISqlStatement | IOrder;
+//----------------------------------------分页查询----------------------------------------
+export interface IPageData {
+	count: number;
+	page: number;
+	pageSize: number;
+	totalPages: number;
+	datas: any[];
 }
-//分页查询
-export async function doPage(page: number, pageSize: number, countField: string, sql: string, e: IQuery) {
-	let query = typeof e === 'function' ? e : e.query;
+export type Query = (sql: string) => Promise<any>;
+export async function doPage(page: number, pageSize: number, countField: string, sql: string, query: Query) {
 	let totalCount;
 	let rs;
 	//如果分页查询
@@ -73,7 +66,20 @@ export async function doPage(page: number, pageSize: number, countField: string,
 		pageSize,
 		totalPages: pageSize <= 0 ? 1 : Math.ceil(totalCount / pageSize),
 		datas: rs || [],
-	};
+	} as IPageData;
+}
+
+//----------------------------------------Sel----------------------------------------
+//Fields
+export type ISqlStatement = string | (() => string);
+export type IOn = { [field: string]: { tableName: string; onField: string } };
+export type IWhere = { [field: string]: any; __set: string };
+export type IOrder = { [field: string]: 'asc' | 'ASC' | 'desc' | 'DESC' | string; __set: string };
+export interface ISqlOptions extends IFields {
+	tableName: string;
+	on: IOn;
+	where: ISqlStatement | IWhere;
+	order?: ISqlStatement | IOrder;
 }
 //各种生成sql语句
 export function getLeftJoinSql(options: ISqlOptions[]) {

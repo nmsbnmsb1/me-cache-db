@@ -1,10 +1,16 @@
 import { IFields } from './fields';
-export type IQuery = {
-    query(sql: string): Promise<any>;
-} | ((sql: string) => Promise<any>);
 export declare function toBoolean(b: any): 0 | 1;
 export declare function escape(str: string): string;
 export declare function sanitizeSQL(sql: string): string;
+export interface IPageData {
+    count: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    datas: any[];
+}
+export type Query = (sql: string) => Promise<any>;
+export declare function doPage(page: number, pageSize: number, countField: string, sql: string, query: Query): Promise<IPageData>;
 export type ISqlStatement = string | (() => string);
 export type IOn = {
     [field: string]: {
@@ -26,11 +32,4 @@ export interface ISqlOptions extends IFields {
     where: ISqlStatement | IWhere;
     order?: ISqlStatement | IOrder;
 }
-export declare function doPage(page: number, pageSize: number, countField: string, sql: string, e: IQuery): Promise<{
-    count: any;
-    page: number;
-    pageSize: number;
-    totalPages: number;
-    datas: any;
-}>;
 export declare function getLeftJoinSql(options: ISqlOptions[]): string;

@@ -1,57 +1,44 @@
 import { IFields, attachAs, cutAs, hasAs, pickFields } from './fields';
 import { CacheManager, ICache, ICachePipeline } from './cache';
-
-//metadata专属字段名
-export const MetadataField = '$metadata';
+import { IDataKey } from './key';
 
 //interfaces
 export interface IData {
 	[dataField: string]: any;
-	[MetadataField]?: any;
 }
-export interface IDataKey {
-	ns: string;
-	pkfield: string;
-}
-export interface IDataStructDescriptor extends IDataKey, IFields {
-	//
-}
+export interface IDataDescriptor extends IDataKey, IFields {}
 // export interface IDataCorruptedInfo {
 // 	indexes: { [index: number | string]: IData };
 // 	pkfields: { [dataPkField: string]: any[] };
 // }
-export type DataTransformer = (data: IData, metadatas?: any) => any | Promise<any>;
-// export const Transformer: { transform: DataTransformer } = {
-// 	transform: undefined,
-// };
+export type DataTransformer = (data: IData) => any | Promise<any>;
 //辅助方法
-interface IHandledStructDescriptor extends IDataStructDescriptor {
+interface IHandledDataDescriptor extends IDataDescriptor {
 	__handled: boolean;
 	//as转换器
 	nas?: { [f: string]: string | false };
-	dataPkField: string;
+	dataPkField?: string;
 	//要去除的字段
 	dfieldMap?: { [f: string]: boolean };
-	//需要的字段
-	allwantFields?: string[];
 }
-function handleStructDescriptor(sd: any, transform: boolean): IHandledStructDescriptor {
-	sd.__handled = true;
+function handleData(dd: any): IHandledDataDescriptor {
+	dd.__handled = true;
 	//
-	if (!sd.as) {
-		sd.dataPkField = sd.pkfield;
+	if (!dd.as) {
+		if (dd.pkfield) {
+			dd.dataPkField = dd.pkfield;
+		}
 	} else {
-		sd.nas = {};
-		sd.dataPkField = sd.nas[sd.pkfield] = attachAs(sd.as, sd.pkfield);
+		dd.nas = {};
+		if (dd.pkfield) {
+			dd.dataPkField = dd.nas[dd.pkfield] = attachAs(dd.as, dd.pkfield);
+		}
 	}
 	//
-	if (sd.fields) sd.needFields = pickFields(sd);
-	if (sd.needFields) sd.dfieldMap = {};
-	if (sd.needFields) {
-		sd.allwantFields = !transform ? sd.needFields : sd.needFields.concat(MetadataField);
-	}
+	if (dd.fields) dd.needFields = pickFields(dd);
+	if (dd.needFields) dd.dfieldMap = {};
 	//
-	return sd;
+	return dd;
 }
 function getPipeline(pl: undefined | string | ICache | ICachePipeline) {
 	if (!pl) {
@@ -70,35 +57,27 @@ export function cget(
 	context: { done?: boolean; data: any; ps?: Promise<any>[] },
 	index: undefined | number | string,
 	data: IData,
-	sds: IDataStructDescriptor[],
+	dds: IDataDescriptor[],
 	transform?: DataTransformer
 ) {
 	let readCount = 0;
-	let metadatas: any = !transform ? undefined : {};
-	for (let sd of sds) {
-		let hsd = sd as IHandledStructDescriptor;
-		if (!hsd.__handled) {
-			handleStructDescriptor(hsd, !!transform);
-		}
-		let key = pl.getCache().getKey('data', hsd.ns, data[hsd.dataPkField]);
-		let { as, pkfield, needFields } = hsd;
-		let { nas, dataPkField, dfieldMap } = hsd;
-		let { allwantFields } = hsd;
-		pl.get(key, allwantFields, (err: Error, values: any, valueConvetor: any) => {
+	for (let dd of dds) {
+		let hdd = dd as IHandledDataDescriptor;
+		if (!hdd.__handled) handleData(hdd);
+		//
+		let key = pl.getCache().getKey('data', hdd.ns, hdd.nn || data[hdd.dataPkField]);
+		let { as, pkfield, needFields } = hdd;
+		let { nas, dataPkField, dfieldMap } = hdd;
+		pl.get(key, needFields, (err: Error, values: any, valueConvetor: any) => {
 			//如果群组出错了，则直接退出
-			if (context.done === false) {
-				return;
-			}
+			if (context.done === false) return;
 			//解析缓存数据
 			let readDone: boolean = undefined;
-			if (err || !values) {
-				readDone = false;
-			} else {
+			if (err || !values) readDone = false;
+			else {
 				let fn = (field: string, value: any) => {
 					value = !valueConvetor ? value : valueConvetor(value);
-					if (value === undefined && field !== MetadataField) {
-						return false;
-					}
+					if (value === undefined) return false;
 					//转换data字段
 					let dataField: string;
 					if (!nas) {
@@ -106,14 +85,7 @@ export function cget(
 					} else {
 						dataField = nas[field] || (nas[field] = attachAs(as, field));
 					}
-					//
-					if (field === MetadataField) {
-						if (metadatas) metadatas[dataField] = value;
-					} else {
-						data[dataField] = value;
-					}
-					//
-					return true;
+					return (data[dataField] = value);
 				};
 				if (Array.isArray(values)) {
 					for (let k = 0; k < needFields.length; k++) {
@@ -142,7 +114,7 @@ export function cget(
 			}
 			//只有pkfield可能不在需要的字段列表里
 			//在get方法里，nas使用了pkfield做key,所以在dfields中也使用pkfield做key
-			if (needFields && dfieldMap[pkfield] !== false) {
+			if (pkfield && needFields && dfieldMap[pkfield] !== false) {
 				if (dfieldMap[pkfield]) {
 					//去除
 					delete data[dataPkField];
@@ -157,8 +129,8 @@ export function cget(
 			}
 			//
 			readCount++;
-			if (readCount >= sds.length) {
-				let ndata = !transform ? data : (transform as DataTransformer)(data, metadatas);
+			if (readCount >= dds.length) {
+				let ndata = !transform ? data : (transform as DataTransformer)(data);
 				//如果result不是Priomise
 				if (!ndata.then) {
 					index === undefined ? (context.data = ndata) : (context.data[index] = ndata);
@@ -174,7 +146,7 @@ export function cget(
 export async function cgetData(
 	cid: undefined | string | ICache | ICachePipeline,
 	data: IData | IData[],
-	sds: IDataStructDescriptor[],
+	dds: IDataDescriptor[],
 	transform?: DataTransformer
 ): Promise<any> {
 	let pl = getPipeline(cid);
@@ -182,10 +154,10 @@ export async function cgetData(
 	//
 	let context: any = { data };
 	if (!Array.isArray(data)) {
-		cget(pl, context, undefined, data, sds, transform);
+		cget(pl, context, undefined, data, dds, transform);
 	} else {
 		for (let i = 0; i < data.length; i++) {
-			cget(pl, context, i, data[i], sds, transform);
+			cget(pl, context, i, data[i], dds, transform);
 		}
 	}
 	//
@@ -203,25 +175,21 @@ export async function cset(
 	context: { data: any; ps?: Promise<any>[] },
 	index: number | string,
 	data: IData,
-	sds: IDataStructDescriptor[],
+	dds: IDataDescriptor[],
 	transform?: DataTransformer,
 	dataRefs?: { [dataPkField: string]: any },
 	expireMS?: number
 ) {
-	let metadatas: any = !transform ? undefined : {};
-	for (let sd of sds) {
-		let hsd = sd as IHandledStructDescriptor;
-		if (!hsd.__handled) {
-			handleStructDescriptor(hsd, !!transform);
-		}
+	for (let dd of dds) {
+		let hdd = dd as IHandledDataDescriptor;
+		if (!hdd.__handled) handleData(hdd);
+		if (dds.length > 1 && !hdd.nas) throw new Error('should set `as` when data has more than one DataDescriptor');
 		//
-		let key = pl.getCache().getKey('data', hsd.ns, data[hsd.dataPkField]);
-		let { as, needFields } = hsd;
-		let { nas, dataPkField, dfieldMap } = hsd;
+		let key = pl.getCache().getKey('data', hdd.ns, hdd.nn || data[hdd.dataPkField]);
+		let { as, needFields } = hdd;
+		let { nas, dataPkField, dfieldMap } = hdd;
 		//放在前面设置，后面可能会删除字段
-		if (dataRefs) {
-			dataRefs[dataPkField] = data[dataPkField];
-		}
+		if (dataRefs) dataRefs[dataPkField] = data[dataPkField];
 		//{ a_uuid:'1', b_uuid:'2' }
 		for (let dataField in data) {
 			//判断字段是否属于当前的block
@@ -234,7 +202,7 @@ export async function cset(
 					//不需要转换
 					field = dataField;
 				} else if (nas[dataField] === false) {
-					//不属于当前sd
+					//不属于当前dd
 					continue;
 				} else {
 					if (nas[dataField]) {
@@ -251,11 +219,6 @@ export async function cset(
 				}
 			}
 			pl.set(key, field, data[dataField]);
-			//
-			if (field === MetadataField) {
-				if (metadatas) metadatas[dataField] = data[dataField];
-				delete data[dataField];
-			}
 			//如果需要返回ndata，去除无用的字段
 			if (needFields && dfieldMap[dataField] !== false) {
 				if (dfieldMap[dataField]) {
@@ -273,11 +236,9 @@ export async function cset(
 		}
 		//
 		pl.expire(key, expireMS || CacheManager.defaultExpireMS);
-		//
-		//console.log('set', hsd);
 	}
 	//
-	let ndata = !transform ? data : (transform as DataTransformer)(data, metadatas);
+	let ndata = !transform ? data : (transform as DataTransformer)(data);
 	//如果result不是Priomise
 	if (!ndata.then) {
 		index === undefined ? (context.data = ndata) : (context.data[index] = ndata);
@@ -290,7 +251,7 @@ export async function cset(
 export async function csetData(
 	cid: undefined | string | ICache | ICachePipeline,
 	data: IData | IData[],
-	sds: IDataStructDescriptor[],
+	dds: IDataDescriptor[],
 	transform?: DataTransformer,
 	expireMS?: number
 ): Promise<any> {
@@ -299,16 +260,16 @@ export async function csetData(
 	//
 	let context: any = { data };
 	if (!Array.isArray(data)) {
-		cset(pl, context, undefined, data, sds, transform, undefined, expireMS);
+		cset(pl, context, undefined, data, dds, transform, undefined, expireMS);
+		await pl.exec();
+		if (context.ps) await Promise.all(context.ps);
+		//
 	} else if (data.length > 0) {
 		for (let i = 0; i < data.length; i++) {
-			cset(pl, context, i, data[i], sds, transform, undefined, expireMS);
+			cset(pl, context, i, data[i], dds, transform, undefined, expireMS);
 		}
-	}
-	//
-	await pl.exec();
-	if (context.ps) {
-		await Promise.all(context.ps);
+		await pl.exec();
+		if (context.ps) await Promise.all(context.ps);
 	}
 	//
 	return context.data;
@@ -317,13 +278,13 @@ export async function csetData(
 /**
  * 查询存在
  */
-export async function cexists(cid: undefined | string, key: string | { prefix?: string; ns: string; pk: string }) {
+export async function cexists(cid: undefined | string, key: string | { prefix?: string; ns: string; nn: string }) {
 	let cache = CacheManager.getCache(cid || CacheManager.defaultCID);
 	if (cache) {
 		if (typeof key === 'string') {
 			return cache.exists(key);
 		} else {
-			return cache.exists(cache.getKey(key.prefix || 'data', key.ns, key.pk));
+			return cache.exists(cache.getKey(key.prefix || 'data', key.ns, key.nn));
 		}
 	}
 	return false;
@@ -332,27 +293,27 @@ export async function cexists(cid: undefined | string, key: string | { prefix?: 
 /**
  * 删除
  */
-export async function cdel(cid: undefined | string, key: string | { prefix?: string; ns: string; pk: string }) {
+export async function cdel(cid: undefined | string, key: string | { prefix?: string; ns: string; nn: string }) {
 	let cache = CacheManager.getCache(cid || CacheManager.defaultCID);
 	if (cache) {
 		if (typeof key === 'string') {
 			return cache.del(key);
 		} else {
-			return cache.del(cache.getKey(key.prefix || 'data', key.ns, key.pk));
+			return cache.del(cache.getKey(key.prefix || 'data', key.ns, key.nn));
 		}
 	}
 }
 export async function cdelData(
 	cid: undefined | string | ICache | ICachePipeline,
-	key: { prefix?: string; ns: string; pkfield?: string },
+	key: { prefix?: string } & IDataKey,
 	datas: any[]
 ) {
 	let pl = getPipeline(cid);
 	if (!pl) return;
 	//
-	let { prefix, ns, pkfield } = key;
+	let { prefix, ns, nn, pkfield } = key;
 	for (let d of datas) {
-		pl.del(pl.getCache().getKey(prefix || 'data', ns, !pkfield ? d : d[pkfield]));
+		pl.del(pl.getCache().getKey(prefix || 'data', ns, nn || d[pkfield]));
 	}
 	//
 	return pl.exec();
@@ -363,15 +324,15 @@ export async function cdelData(
  */
 export async function cexpire(
 	cid: undefined | string,
-	key: string | { prefix?: string; ns: string; pk: string },
+	key: string | { prefix?: string; ns: string; nn: string },
 	ms: number
 ) {
 	let cache = CacheManager.getCache(cid || CacheManager.defaultCID);
 	if (cache) {
 		if (typeof key === 'string') {
-			cache.expire(key, ms);
+			return cache.expire(key, ms);
 		} else {
-			return cache.expire(cache.getKey(key.prefix || 'data', key.ns, key.pk), ms);
+			return cache.expire(cache.getKey(key.prefix || 'data', key.ns, key.nn), ms);
 		}
 	}
 }

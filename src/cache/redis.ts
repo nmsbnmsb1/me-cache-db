@@ -26,8 +26,8 @@ export class RedisCache implements ICache {
 	}
 
 	//common
-	public getKey(prefix: string, ns: string, pk: any) {
-		return `${prefix}:${ns}:${pk}`;
+	public getKey(prefix: string, ns: string, nn: any) {
+		return `${prefix}:${ns}:${nn}`;
 	}
 	public async exists(key: string) {
 		return (await this.redis.exists(key)) > 0;

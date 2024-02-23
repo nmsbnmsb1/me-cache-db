@@ -39,6 +39,7 @@ export declare function getBaseTagStore(options?: {
         others?: string[];
     } | false;
 }): ITagStore;
+export declare function tagField(store: ITagStore, fieldName: string, tags: string[]): void;
 export declare function Tag(store: ITagStore, ...tags: string[]): (target: any, fieldName: string) => void;
 export interface IFieldsModifier {
     [name: string]: boolean | 'override';

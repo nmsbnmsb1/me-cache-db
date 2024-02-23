@@ -1,5 +1,6 @@
-import { IDataStructDescriptor, IDataKey, IData, DataTransformer } from './core/cdata';
-export declare function sel(cid: undefined | string, data: IData | IData[], sds: IDataStructDescriptor[], selector: () => Promise<IData | IData[]>, transform?: DataTransformer, forceDB?: boolean, expireMS?: number): Promise<any>;
-export declare function selIn(cid: undefined | string, pkfield: string, pkvalues: any[], sd: IDataStructDescriptor, selector: () => Promise<IData[]>, transform?: DataTransformer, forceDB?: boolean, expireMS?: number): Promise<any>;
-export declare function update(cid: undefined | string, data: IData | IData[], sd: IDataStructDescriptor, updater: (data?: any) => Promise<boolean>, handleCache?: 'update' | 'del', expireMS?: number): Promise<void>;
+import { IDataDescriptor, IData, DataTransformer } from './core/cdata';
+import { IDataKey } from './core/key';
+export declare function sel(cid: undefined | string, data: IData | IData[], dds: IDataDescriptor[], selector: () => Promise<IData | IData[]>, transform?: DataTransformer, forceDB?: boolean, expireMS?: number): Promise<any>;
+export declare function selIn(cid: undefined | string, pkfield: string, pkvalues: any[], dd: IDataDescriptor, selector: () => Promise<IData[]>, transform?: DataTransformer, forceDB?: boolean, expireMS?: number): Promise<any>;
+export declare function update(cid: undefined | string, data: IData | IData[], dd: IDataDescriptor, updater: (data?: any) => Promise<boolean>, handleCache?: 'update' | 'del', expireMS?: number): Promise<void>;
 export declare function del(cid: undefined | string, data: IData | IData[], key: IDataKey, deleter: (data: any) => Promise<boolean>): Promise<void>;

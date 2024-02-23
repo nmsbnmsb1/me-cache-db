@@ -1,4 +1,4 @@
-//字段别名
+//AS 字段别名 ------------------------------------------------------------------------
 export interface IAs {
 	as?: string;
 }
@@ -11,7 +11,7 @@ export function attachAs(as: string, field: string) {
 export function cutAs(as: string, asField: string) {
 	return asField.substring(as.length + 1);
 }
-//字段标签
+//Tag 字段标签 ------------------------------------------------------------------------
 export const TAG_FULL = 'full';
 export const TAG_COMMON = 'common';
 export const TAG_Preset = 'preset';
@@ -62,7 +62,7 @@ export function getBaseTagStore(options?: {
 	}
 	return store;
 }
-function tagField(store: ITagStore, fieldName: string, tags: string[]) {
+export function tagField(store: ITagStore, fieldName: string, tags: string[]) {
 	for (let tag of tags) {
 		let t = store[tag] || (store[tag] = []);
 		if (t.indexOf(fieldName) < 0) {
@@ -77,7 +77,7 @@ export function Tag(store: ITagStore, ...tags: string[]) {
 		tagField(store, fieldName, tags);
 	};
 }
-//字段处理
+//Field 字段处理 ------------------------------------------------------------------------
 export interface IFieldsModifier {
 	[name: string]: boolean | 'override';
 }

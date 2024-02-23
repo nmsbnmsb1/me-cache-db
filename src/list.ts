@@ -1,27 +1,17 @@
-import { ISqlOptions } from './core/db';
-import { IDataStructDescriptor, cgetData, cset, IData, DataTransformer } from './core/cdata';
-import { CacheManager, ICache } from './core/cache';
-import { Trigger } from './trigger';
+import { INameKey } from './core/key';
 import { IFields, attachAs } from './core/fields';
+import { IPageData, ISqlOptions } from './core/db';
+import { CacheManager, ICache } from './core/cache';
+import { IDataDescriptor, cgetData, cset, IData, DataTransformer } from './core/cdata';
+import { Trigger } from './trigger';
 
 //List查询器
-export interface IListKey {
-	ns: string;
-	listName: string;
-}
-export interface IListDataStructDescriptor extends IDataStructDescriptor, Partial<ISqlOptions> {}
-export interface IListPageData {
-	count: number;
-	page: number;
-	pageSize: number;
-	totalPages: number;
-	datas: any[];
-}
+export interface IListDataDescriptor extends IDataDescriptor, Partial<ISqlOptions> {}
 export type IListSelector = (
 	page: number,
 	pageSize: number,
 	order: 'ASC' | 'DESC',
-	sds: IListDataStructDescriptor[]
+	ldds: IListDataDescriptor[]
 ) => Promise<{ count: number; datas: IData[] }>;
 export interface IList {
 	sel(
@@ -31,7 +21,7 @@ export interface IList {
 		fields?: IFields[],
 		raw?: boolean,
 		forceDB?: boolean
-	): Promise<IListPageData>;
+	): Promise<IPageData>;
 	del(delDatas: boolean, onDataRefsNotFound?: () => Promise<any[]>): Promise<void>;
 }
 
@@ -39,17 +29,17 @@ export interface IList {
 export class List implements IList {
 	private cid: undefined | string;
 	private cache: ICache;
-	private key: IListKey;
+	private key: INameKey;
 	private listKey: string;
-	private sds: IListDataStructDescriptor[];
+	private ldds: IListDataDescriptor[];
 	private selector: IListSelector;
 	private transform: DataTransformer;
 	private expireMS: number;
 
 	constructor(
 		cid: undefined | string,
-		key: IListKey,
-		sds: IListDataStructDescriptor[],
+		key: INameKey,
+		ldds: IListDataDescriptor[],
 		selector: IListSelector,
 		transform?: DataTransformer,
 		expireMS?: number
@@ -57,8 +47,8 @@ export class List implements IList {
 		this.cid = cid;
 		this.cache = CacheManager.getCache(this.cid);
 		this.key = key;
-		this.listKey = this.cache.getKey('list', key.ns, key.listName);
-		this.sds = sds;
+		this.listKey = this.cache.getKey('list', key.ns, key.nn);
+		this.ldds = ldds;
 		this.selector = selector;
 		this.transform = transform;
 		this.expireMS = expireMS || CacheManager.defaultExpireMS;
@@ -70,7 +60,7 @@ export class List implements IList {
 		fields?: IFields[],
 		raw?: boolean,
 		forceDB?: boolean
-	): Promise<IListPageData> {
+	): Promise<IPageData> {
 		let keyPrefix = `${pageSize}.${order}`;
 		let countKey = `${keyPrefix}.count`;
 		let pageDataKey = `${keyPrefix}.P${page}`;
@@ -78,9 +68,9 @@ export class List implements IList {
 		let count = 0;
 		let datas;
 		//创建新的sds结构，防止多次调用使用同一个对象
-		let sds = [];
-		for (let i = 0; i < this.sds.length; i++) {
-			sds.push({ ...this.sds[i], ...(fields ? fields[i] : undefined) });
+		let ldds = [];
+		for (let i = 0; i < this.ldds.length; i++) {
+			ldds.push({ ...this.ldds[i], ...(fields ? fields[i] : undefined) });
 		}
 		//
 		if (!forceDB) {
@@ -97,7 +87,7 @@ export class List implements IList {
 					datas = lcdata[pageDataKey];
 				}
 				if (count && datas) {
-					datas = await cgetData(this.cid, datas, sds, raw === false ? this.transform : undefined);
+					datas = await cgetData(this.cid, datas, ldds, raw === false ? this.transform : undefined);
 					if (datas) {
 						return {
 							count,
@@ -113,7 +103,7 @@ export class List implements IList {
 			}
 		}
 		//执行到这里，需要通过调用数据库获取数据
-		let pageData = await this.selector(page, pageSize, order, sds);
+		let pageData = await this.selector(page, pageSize, order, ldds);
 		//全部写入缓存
 		let pl = this.cache.pipeline();
 		pl.set(this.listKey, countKey, pageData.count);
@@ -126,7 +116,7 @@ export class List implements IList {
 			let dataRefs = [];
 			for (let i = 0; i < pageData.datas.length; i++) {
 				let dref = {};
-				cset(pl, context, i, pageData.datas[i], sds, raw === false ? this.transform : undefined, dref, this.expireMS);
+				cset(pl, context, i, pageData.datas[i], ldds, raw === false ? this.transform : undefined, dref, this.expireMS);
 				dataRefs.push(dref);
 			}
 			pl.set(this.listKey, pageDataKey, dataRefs);
@@ -153,18 +143,17 @@ export class List implements IList {
 		let pl = this.cache.pipeline();
 		let data = await this.cache.get(this.listKey);
 		if (data) {
-			let sds = [];
-			for (let sd of this.sds) {
-				sds.push({ ns: sd.ns, dataPkField: !sd.as ? sd.pkfield : attachAs(sd.as, sd.pkfield) });
+			let ldds = [];
+			for (let ldd of this.ldds) {
+				ldds.push({ ns: ldd.ns, nn: ldd.nn, dataPkField: !ldd.as ? ldd.pkfield : attachAs(ldd.as, ldd.pkfield) });
 			}
 			//
 			for (let key in data) {
-				let val = data[key];
-				if (!Array.isArray(val)) continue;
-				//
-				for (let data of val) {
-					for (let sd of sds) {
-						pl.del(this.cache.getKey('data', sd.ns, data[sd.dataPkField]));
+				let drefs = data[key];
+				if (!Array.isArray(drefs)) continue;
+				for (let dref of drefs) {
+					for (let ldd of ldds) {
+						pl.del(this.cache.getKey('data', ldd.ns, ldd.nn || dref[ldd.dataPkField]));
 					}
 				}
 			}
@@ -176,7 +165,7 @@ export class List implements IList {
 }
 
 //混合列表套装
-export type IListFactory = (where: IListKey | any) => IList;
+export type IListFactory = (where: INameKey | any) => IList;
 export class ListSet {
 	private factory: IListFactory;
 	private listMap: { [listName: string]: IList };
@@ -188,21 +177,21 @@ export class ListSet {
 
 	//获取列表
 	public async sel(
-		where: IListKey | any,
+		where: INameKey | any,
 		page: number,
 		pageSize: number = 0,
 		order: 'ASC' | 'DESC' = 'ASC',
 		fields?: IFields[],
 		raw?: boolean,
 		forceDB?: boolean
-	): Promise<IListPageData> {
-		let id = `${where.ns}:${where.listName}`;
+	): Promise<IPageData> {
+		let id = `${where.ns}:${where.nn}`;
 		let list = this.listMap[id] || (this.listMap[id] = this.factory(where));
 		return list.sel(page, pageSize, order, fields, raw, forceDB);
 	}
 
-	public async del(key: IListKey, delDatas: boolean = false, onDataRefsNotFound?: () => Promise<any[]>) {
-		let id = `${key.ns}:${key.listName}`;
+	public async del(key: INameKey, delDatas: boolean = false, onDataRefsNotFound?: () => Promise<any[]>) {
+		let id = `${key.ns}:${key.nn}`;
 		let list = this.listMap[id];
 		return !list ? undefined : list.del(delDatas, onDataRefsNotFound);
 	}
@@ -219,12 +208,12 @@ export class ListSet {
 		}
 		return this;
 	}
-	private async onTrigger(keys: IListKey | IListKey[]) {
+	private async onTrigger(keys: INameKey | INameKey[]) {
 		if (!Array.isArray(keys)) keys = [keys];
 		//
 		let cache: any;
 		for (let key of keys) {
-			let id = `${key.ns}:${key.listName}`;
+			let id = `${key.ns}:${key.nn}`;
 			let list = this.listMap[id];
 			if (list) {
 				list.del(false);
@@ -232,7 +221,7 @@ export class ListSet {
 				//TODO
 				//尝试使用默认的缓存起删除列表文件
 				if (!cache) cache = CacheManager.getCache();
-				await cache.del(cache.getKey('list', key.ns, key.listName));
+				await cache.del(cache.getKey('list', key.ns, key.nn));
 			}
 		}
 	}
