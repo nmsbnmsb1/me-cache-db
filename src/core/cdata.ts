@@ -303,7 +303,7 @@ export async function cdel(cid: undefined | string, key: string | { prefix?: str
 		}
 	}
 }
-export async function cdelData(
+export async function cdelDatas(
 	cid: undefined | string | ICache | ICachePipeline,
 	key: { prefix?: string } & IDataKey,
 	datas: any[]
@@ -311,9 +311,10 @@ export async function cdelData(
 	let pl = getPipeline(cid);
 	if (!pl) return;
 	//
+	let cache = pl.getCache();
 	let { prefix, ns, nn, pkfield } = key;
 	for (let d of datas) {
-		pl.del(pl.getCache().getKey(prefix || 'data', ns, nn || d[pkfield]));
+		pl.del(cache.getKey(prefix || 'data', ns, nn || d[pkfield]));
 	}
 	//
 	return pl.exec();
