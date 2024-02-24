@@ -30,7 +30,7 @@ export declare function cdel(cid: undefined | string, key: string | {
     ns: string;
     nn: string;
 }): Promise<any>;
-export declare function cdelData(cid: undefined | string | ICache | ICachePipeline, key: {
+export declare function cdelDatas(cid: undefined | string | ICache | ICachePipeline, key: {
     prefix?: string;
 } & IDataKey, datas: any[]): Promise<any>;
 export declare function cexpire(cid: undefined | string, key: string | {
