@@ -52,7 +52,7 @@ export async function update(
 	cid: undefined | string,
 	data: IData | IData[],
 	dd: IDataDescriptor,
-	updater: (data?: any) => Promise<boolean>,
+	updater: (data?: any) => Promise<any>,
 	handleCache: 'update' | 'del' = 'del',
 	expireMS?: number
 ) {
@@ -63,7 +63,7 @@ export async function update(
 	}
 	//如果更新成功，更新缓存
 	let cache = CacheManager.getCache(cid);
-	if (!cache) return;
+	if (!cache) return data;
 	//如果是更新缓存
 	if (handleCache === 'update') {
 		let context = { data };
@@ -96,6 +96,7 @@ export async function update(
 			pl.exec();
 		}
 	}
+	return data;
 }
 
 //del

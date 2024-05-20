@@ -85,7 +85,8 @@ export function cget(
 					} else {
 						dataField = nas[field] || (nas[field] = attachAs(as, field));
 					}
-					return (data[dataField] = value);
+					data[dataField] = value;
+					return true;
 				};
 				if (Array.isArray(values)) {
 					for (let k = 0; k < needFields.length; k++) {

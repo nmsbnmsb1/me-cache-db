@@ -6,11 +6,11 @@
 		"build": "tsc"
 	},
 	"dependencies": {
-		"ioredis": "^5.3.2"
+		"ioredis": "^5.4.1"
 	},
 	"devDependencies": {
-		"@types/node": "^20.11.20",
+		"@types/node": "^20.12.12",
 		"prettier": "^3.2.5",
-		"typescript": "^5.3.3"
+		"typescript": "^5.4.5"
 	}
 }
