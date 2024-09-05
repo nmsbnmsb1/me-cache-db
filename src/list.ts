@@ -219,7 +219,7 @@ export class ListSet {
 				list.del(false);
 			} else {
 				//TODO
-				//尝试使用默认的缓存起删除列表文件
+				//尝试使用默认的缓存器删除列表文件
 				if (!cache) cache = CacheManager.getCache();
 				await cache.del(cache.getKey('list', key.ns, key.nn));
 			}

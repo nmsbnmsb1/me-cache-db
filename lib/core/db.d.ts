@@ -11,25 +11,25 @@ export interface IPageData {
 }
 export type Query = (sql: string) => Promise<any>;
 export declare function doPage(page: number, pageSize: number, countField: string, sql: string, query: Query): Promise<IPageData>;
-export type ISqlStatement = string | (() => string);
-export type IOn = {
+export type SqlStatement = string | (() => string);
+export interface IOn {
     [field: string]: {
         tableName: string;
         onField: string;
     };
-};
-export type IWhere = {
+}
+export interface IWhere {
+    __set?: string;
     [field: string]: any;
-    __set: string;
-};
-export type IOrder = {
+}
+export interface IOrder {
+    __set?: string;
     [field: string]: 'asc' | 'ASC' | 'desc' | 'DESC' | string;
-    __set: string;
-};
+}
 export interface ISqlOptions extends IFields {
     tableName: string;
-    on: IOn;
-    where: ISqlStatement | IWhere;
-    order?: ISqlStatement | IOrder;
+    on?: IOn;
+    where: SqlStatement | IWhere;
+    order?: SqlStatement | IOrder;
 }
 export declare function getLeftJoinSql(options: ISqlOptions[]): string;

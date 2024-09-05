@@ -10,7 +10,7 @@ export class Trigger {
 			arr.push(onTrigger);
 		}
 	}
-	public static async do(name: string, body: any) {
+	public static async do(name: string, body?: any) {
 		// console.log(name);
 		let arr = Trigger.map[name];
 		// console.log(arr);

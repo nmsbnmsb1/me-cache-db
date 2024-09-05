@@ -70,16 +70,23 @@ export async function doPage(page: number, pageSize: number, countField: string,
 }
 
 //----------------------------------------Sel----------------------------------------
-//Fields
-export type ISqlStatement = string | (() => string);
-export type IOn = { [field: string]: { tableName: string; onField: string } };
-export type IWhere = { [field: string]: any; __set: string };
-export type IOrder = { [field: string]: 'asc' | 'ASC' | 'desc' | 'DESC' | string; __set: string };
+export type SqlStatement = string | (() => string);
+export interface IOn {
+	[field: string]: { tableName: string; onField: string };
+}
+export interface IWhere {
+	__set?: string;
+	[field: string]: any;
+}
+export interface IOrder {
+	__set?: string;
+	[field: string]: 'asc' | 'ASC' | 'desc' | 'DESC' | string;
+}
 export interface ISqlOptions extends IFields {
 	tableName: string;
-	on: IOn;
-	where: ISqlStatement | IWhere;
-	order?: ISqlStatement | IOrder;
+	on?: IOn;
+	where: SqlStatement | IWhere;
+	order?: SqlStatement | IOrder;
 }
 //各种生成sql语句
 export function getLeftJoinSql(options: ISqlOptions[]) {
