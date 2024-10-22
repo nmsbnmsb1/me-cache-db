@@ -50,7 +50,7 @@ initCache(RedisCache.CID, { [RedisCache.CID]: new RedisCache() });
 		return { data };
 	};
 	//
-	let list = new List(RedisCache.CID, listKey, ldds, selector, build);
+	let list = new List({ cid: RedisCache.CID, listKey }, ldds, selector, build);
 	let result = await list.sel(1, 0, 'ASC');
 	console.log('result1', result.datas);
 	result = await list.sel(1, 1);

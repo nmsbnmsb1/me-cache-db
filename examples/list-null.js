@@ -44,7 +44,7 @@ initCache(NullCache.CID, { [NullCache.CID]: new NullCache() });
 		return { count: datas.length, datas: datas.slice(0, pageSize) };
 	};
 	//
-	let list = new List(NullCache.CID, listKey, ldds, selector);
+	let list = new List({ cid: NullCache.CID, listKey }, ldds, selector);
 	let result = await list.sel(1, 0, 'ASC');
 	console.log('result1', result);
 	result = await list.sel(1, 1, 'ASC');

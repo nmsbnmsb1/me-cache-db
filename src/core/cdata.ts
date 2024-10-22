@@ -7,12 +7,6 @@ export interface IData {
 	[dataField: string]: any;
 }
 export interface IDataDescriptor extends IDataKey, IFields {}
-// export interface IDataCorruptedInfo {
-// 	indexes: { [index: number | string]: IData };
-// 	pkfields: { [dataPkField: string]: any[] };
-// }
-export type DataTransformer = (data: IData) => any | Promise<any>;
-//辅助方法
 interface IHandledDataDescriptor extends IDataDescriptor {
 	__handled: boolean;
 	//as转换器
@@ -50,6 +44,11 @@ function getPipeline(pl: undefined | string | ICache | ICachePipeline) {
 	}
 	return pl as ICachePipeline;
 }
+export type DataTransformer = (data: IData) => any | Promise<any>;
+// export interface IDataCorruptedInfo {
+// 	indexes: { [index: number | string]: IData };
+// 	pkfields: { [dataPkField: string]: any[] };
+// }
 
 //
 export function cget(
@@ -163,9 +162,7 @@ export async function cgetData(
 	}
 	//
 	await pl.exec();
-	if (context.ps) {
-		await Promise.all(context.ps);
-	}
+	if (context.ps) await Promise.all(context.ps);
 	//
 	return context.done !== false ? context.data : undefined;
 }

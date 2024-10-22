@@ -78,19 +78,17 @@ export function cutAs(as: string, asField: string) {
 // 	};
 // }
 //Field 字段处理 ------------------------------------------------------------------------
-export interface IFieldsModifier {
-	[name: string]: boolean | 'override';
-}
+export type FieldsModifier = { [name: string]: boolean | 'override' };
 export interface IFields extends IAs {
 	fields?: string | string[];
-	fieldsModifier?: IFieldsModifier;
+	fieldsModifier?: FieldsModifier;
 	needFields?: string[];
 }
 export type Fields = string | string[] | IFields;
-// export function pickFields(fields: string, modifier: IFieldsModifier): string[];
-// export function pickFields(fields: string[], modifier: IFieldsModifier): string[];
+// export function pickFields(fields: string, modifier: FieldsModifier): string[];
+// export function pickFields(fields: string[], modifier: FieldsModifier): string[];
 // export function pickFields(fields: IFields): string[];
-export function pickFields(fields: Fields, modifier?: IFieldsModifier) {
+export function pickFields(fields: Fields, modifier?: FieldsModifier) {
 	let fs: string[];
 	if (typeof fields === 'string') {
 		fs = fields.split(',');
@@ -122,7 +120,7 @@ export function pickFields(fields: Fields, modifier?: IFieldsModifier) {
 	// console.log(fs);
 	return fs;
 }
-export function filterDataFields(data: any, fields: Fields, modifier?: IFieldsModifier) {
+export function filterDataFields(data: any, fields: Fields, modifier?: FieldsModifier) {
 	let fs = pickFields(fields, modifier);
 	for (let k in data) {
 		if (fs.indexOf(k) < 0) {
@@ -134,9 +132,11 @@ export function filterDataFields(data: any, fields: Fields, modifier?: IFieldsMo
 //字段方案表,设置多种字段方案
 export class FieldScheme {
 	private m: { [scheme: string]: string };
+
 	constructor(m: { [scheme: string]: string }) {
 		this.m = m;
 	}
+
 	public getFields(fields: Fields): IFields {
 		if (typeof fields === 'string') {
 			return { fields: this.m[fields] || fields };

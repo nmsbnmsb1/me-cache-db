@@ -51,7 +51,7 @@ initCache(JSONCache.CID, { [JSONCache.CID]: new JSONCache(path.resolve('./exampl
 		return { data };
 	};
 	//
-	let list = new List(JSONCache.CID, listKey, ldds, selector, build);
+	let list = new List({ cid: JSONCache.CID, listKey }, ldds, selector, build);
 	let result = await list.sel(1, 0, 'ASC');
 	console.log('result1', result);
 	result = await list.sel(1, 1, 'ASC');
