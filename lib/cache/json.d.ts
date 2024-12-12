@@ -1,5 +1,5 @@
-import { ICache, ICachePipeline } from '../core/cache';
-export declare class JSONCache implements ICache {
+import { Cache, CachePipeline } from '../core/cache';
+export declare class JSONCache implements Cache {
     static CID: string;
     private rootPath;
     constructor(rootPath: string);
@@ -11,9 +11,9 @@ export declare class JSONCache implements ICache {
     set(key: string, field: string, value: any): Promise<any>;
     get(key: string): Promise<any>;
     get(key: string, fields: string[]): Promise<any>;
-    pipeline(): ICachePipeline;
+    pipeline(): CachePipeline;
 }
-export declare class JSONPipeline implements ICachePipeline {
+export declare class JSONPipeline implements CachePipeline {
     private parent;
     private rootPath;
     private dataMap;

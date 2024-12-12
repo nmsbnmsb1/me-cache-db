@@ -1,5 +1,5 @@
-import { ICache, ICachePipeline } from '../core/cache';
-export declare class NullCache implements ICache {
+import { Cache, CachePipeline } from '../core/cache';
+export declare class NullCache implements Cache {
     static CID: string;
     constructor();
     getKey(prefix: string, ns: string, nn: any): string;
@@ -10,9 +10,9 @@ export declare class NullCache implements ICache {
     set(key: string, field: string, value: any): Promise<any>;
     get(key: string): Promise<any>;
     get(key: string, fields: string[]): Promise<any>;
-    pipeline(): ICachePipeline;
+    pipeline(): CachePipeline;
 }
-export declare class NullPipeline implements ICachePipeline {
+export declare class NullPipeline implements CachePipeline {
     private parent;
     constructor(parent: NullCache);
     getCache(): NullCache;

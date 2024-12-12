@@ -15,10 +15,10 @@ export type WhereOperator =
 export type WhereValue = null | undefined | string | number;
 export type WhereMultiValue = WhereValue[];
 export type WhereOP = [WhereOperator, WhereValue | WhereMultiValue];
-export type WhereLogic = { _logic?: string };
+export interface WhereLogic { _logic?: string };
 export type WhereComposite = WhereLogic & { [key in WhereOperator]?: WhereValue | WhereMultiValue };
 export type Where = WhereValue | WhereOP | WhereComposite;
-export interface IWhere extends WhereLogic {
+export interface WhereOptions extends WhereLogic {
 	[field: string]: Where;
 }
 
@@ -79,13 +79,13 @@ export function getFieldWhereSql(field: string, where: Where): string {
 	return `\`${field}\` = ${getValueSql(where as any)}`;
 }
 
-function _getWhereSql(asPrefix: string, wg: IWhere, isChild: boolean): string {
+function _getWhereSql(asPrefix: string, wo: WhereOptions, isChild: boolean): string {
 	let sqls: string[] = [];
 	//遍历所有的where条件
-	for (let field in wg) {
+	for (let field in wo) {
 		if (field === '_logic') continue;
 		//
-		let where = wg[field];
+		let where = wo[field];
 		//如果是嵌套where
 		if (typeof where === 'object' && !Array.isArray(where)) {
 			sqls.push(_getWhereSql(asPrefix, where as any, true));
@@ -100,14 +100,14 @@ function _getWhereSql(asPrefix: string, wg: IWhere, isChild: boolean): string {
 	} else if (length === 1) {
 		return sqls[0];
 	}
-	let logic = !wg._logic ? 'AND' : (wg._logic as string).toUpperCase();
+	let logic = !wo._logic ? 'AND' : (wo._logic as string).toUpperCase();
 	let whereSql = sqls.join(` ${logic} `);
 	return !isChild ? whereSql : `(${whereSql})`;
 }
 
-export function getWhereSql(asPrefix: string, wg: IWhere): string {
+export function getWhereSql(asPrefix: string, wo: WhereOptions): string {
 	if (asPrefix && !asPrefix.endsWith('.')) asPrefix = `${asPrefix}.`;
-	return _getWhereSql(asPrefix, wg, false);
+	return _getWhereSql(asPrefix, wo, false);
 }
 
 // 使用示例

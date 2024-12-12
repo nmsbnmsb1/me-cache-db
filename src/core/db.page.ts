@@ -1,6 +1,6 @@
 export type PageQuery = (sql: string) => Promise<any>;
 
-export interface IPageData {
+export interface PageData {
 	count: number;
 	page: number;
 	pageSize: number;
@@ -30,5 +30,5 @@ export async function doPage(page: number, pageSize: number, countField: string,
 		pageSize,
 		totalPages: pageSize <= 0 ? 1 : Math.ceil(totalCount / pageSize),
 		datas: rs || [],
-	} as IPageData;
+	} as PageData;
 }

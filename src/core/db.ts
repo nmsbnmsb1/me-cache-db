@@ -1,24 +1,24 @@
-import { IFields, pickFields } from './fields';
-import { IWhere, getWhereSql } from './db.where';
+import { FieldsOptions, pickFields } from './fields';
+import { WhereOptions, getWhereSql } from './db.where';
 
 //----------------------------------------Sel----------------------------------------
 export type SqlStatement = string | (() => string);
-export interface IOn {
+export interface OnOptions {
 	[field: string]: { tableName: string; onField: string };
 }
 export type OrderDefinition = 'ASC' | 'DESC';
-export interface IOrder {
+export interface OrderOptions {
 	[field: string]: OrderDefinition | string;
 }
-export interface ISqlOptions extends IFields {
+export interface SqlOptions extends FieldsOptions {
 	tableName: string;
-	on?: IOn;
-	where?: SqlStatement | IWhere;
-	order?: SqlStatement | IOrder;
+	on?: OnOptions;
+	where?: SqlStatement | WhereOptions;
+	order?: SqlStatement | OrderOptions;
 }
 //各种生成sql语句
-export function getLeftJoinSql(options: ISqlOptions[]) {
-	let tableMap: { [tname: string]: ISqlOptions } = {};
+export function getLeftJoinSql(options: SqlOptions[]) {
+	let tableMap: { [tname: string]: SqlOptions } = {};
 	for (let option of options) {
 		tableMap[option.tableName] = option;
 	}
@@ -51,9 +51,8 @@ export function getLeftJoinSql(options: ISqlOptions[]) {
 				for (let field in on) {
 					//a.uuid = b.uuid
 					let { tableName, onField } = on[field];
-					fromSql = `(${fromSql}) left join ${tsql} on ${asPrefix}${field} = ${
-						!tableMap[tableName].as ? '' : `${tableMap[tableName].as}.`
-					}${onField}`;
+					fromSql = `(${fromSql}) left join ${tsql} on ${asPrefix}${field} = ${!tableMap[tableName].as ? '' : `${tableMap[tableName].as}.`
+						}${onField}`;
 				}
 			}
 		}

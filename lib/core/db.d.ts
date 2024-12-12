@@ -1,20 +1,20 @@
-import { IFields } from './fields';
-import { IWhere } from './db.where';
+import { FieldsOptions } from './fields';
+import { WhereOptions } from './db.where';
 export type SqlStatement = string | (() => string);
-export interface IOn {
+export interface OnOptions {
     [field: string]: {
         tableName: string;
         onField: string;
     };
 }
 export type OrderDefinition = 'ASC' | 'DESC';
-export interface IOrder {
+export interface OrderOptions {
     [field: string]: OrderDefinition | string;
 }
-export interface ISqlOptions extends IFields {
+export interface SqlOptions extends FieldsOptions {
     tableName: string;
-    on?: IOn;
-    where?: SqlStatement | IWhere;
-    order?: SqlStatement | IOrder;
+    on?: OnOptions;
+    where?: SqlStatement | WhereOptions;
+    order?: SqlStatement | OrderOptions;
 }
-export declare function getLeftJoinSql(options: ISqlOptions[]): string;
+export declare function getLeftJoinSql(options: SqlOptions[]): string;

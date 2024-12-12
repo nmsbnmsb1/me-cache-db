@@ -1,26 +1,25 @@
-import { INameKey } from './core/keys';
-import { IFields } from './core/fields';
-import { ISqlOptions, OrderDefinition } from './core/db';
-import { IPageData } from './core/db.page';
-import { IDataDescriptor, IData, DataTransformer } from './core/cdata';
-export interface IListSelField extends IFields, ISqlOptions {
+import { NameKey } from './core/keys';
+import { SqlOptions, OrderDefinition } from './core/db';
+import { PageData } from './core/db.page';
+import { DataDescriptor, Data, DataTransformer } from './core/cdata';
+export interface ListSelField extends SqlOptions {
 }
-export interface IListDataDescriptor extends IDataDescriptor, ISqlOptions {
+export interface ListDataDescriptor extends DataDescriptor, SqlOptions {
 }
-export type IListSelector = (listdds: IListDataDescriptor[], page: number, pageSize: number, order: 'ASC' | 'DESC') => Promise<{
+export type ListSelector = (listdds: ListDataDescriptor[], page: number, pageSize: number, order: 'ASC' | 'DESC') => Promise<{
     count: number;
-    datas: IData[];
+    datas: Data[];
 }>;
-export interface IList {
-    sel(fields: IListSelField[], page: number, pageSize: number, order: 'ASC' | 'DESC', raw?: boolean, forceDB?: boolean): Promise<IPageData>;
+export interface List {
+    sel(fields: ListSelField[], page: number, pageSize: number, order: 'ASC' | 'DESC', raw?: boolean, forceDB?: boolean): Promise<PageData>;
     del(delDatas: boolean, onDataRefsNotFound?: () => Promise<any[]>): Promise<void>;
 }
-export interface IListCacheConfig {
+export interface ListCacheConfig {
     cid: undefined | string;
-    listKey: INameKey;
+    listKey: NameKey;
     expireMS?: number;
 }
-export declare class List implements IList {
+export declare class CommonList implements List {
     private cid;
     private listKey;
     private expireMS;
@@ -28,17 +27,17 @@ export declare class List implements IList {
     private dds;
     private selector;
     private transform;
-    constructor(cacheConfig: false | IListCacheConfig, dds: IDataDescriptor[], selector: IListSelector, transform?: DataTransformer);
-    sel(fields: IListSelField[], page: number, pageSize: number, order?: OrderDefinition, raw?: boolean, forceDB?: boolean): Promise<IPageData>;
+    constructor(cacheConfig: false | ListCacheConfig, dds: DataDescriptor[], selector: ListSelector, transform?: DataTransformer);
+    sel(fields: ListSelField[], page: number, pageSize: number, order?: OrderDefinition, raw?: boolean, forceDB?: boolean): Promise<PageData>;
     del(delDatas: boolean): Promise<any>;
 }
-export type IListFactory = (listConfig: INameKey & any) => IList;
+export type ListFactory = (listConfig: NameKey & any) => List;
 export declare class ListSet {
     private factory;
     private listMap;
-    constructor(listFactory: IListFactory);
-    sel(listConfig: INameKey & any, fields: IListSelField[], page: number, pageSize: number, order?: OrderDefinition, raw?: boolean, forceDB?: boolean): Promise<IPageData>;
-    del(key: INameKey, delDatas?: boolean, onDataRefsNotFound?: () => Promise<any[]>): Promise<void>;
+    constructor(listFactory: ListFactory);
+    sel(listConfig: NameKey & any, fields: ListSelField[], page: number, pageSize: number, order?: OrderDefinition, raw?: boolean, forceDB?: boolean): Promise<PageData>;
+    del(key: NameKey, delDatas?: boolean, onDataRefsNotFound?: () => Promise<any[]>): Promise<void>;
     setTrigger(names: string | string[]): this;
     private onTrigger;
 }

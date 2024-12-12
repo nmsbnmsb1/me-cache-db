@@ -1,5 +1,5 @@
 //AS 字段别名 ------------------------------------------------------------------------
-export interface IAs {
+export interface As {
 	as?: string;
 }
 export function hasAs(as: string, asField: string) {
@@ -78,16 +78,17 @@ export function cutAs(as: string, asField: string) {
 // 	};
 // }
 //Field 字段处理 ------------------------------------------------------------------------
-export type FieldsModifier = { [name: string]: boolean | 'override' };
-export interface IFields extends IAs {
+
+export interface FieldsModifier {
+	[name: string]: boolean | 'override'
+};
+export interface FieldsOptions extends As {
 	fields?: string | string[];
 	fieldsModifier?: FieldsModifier;
 	needFields?: string[];
 }
-export type Fields = string | string[] | IFields;
-// export function pickFields(fields: string, modifier: FieldsModifier): string[];
-// export function pickFields(fields: string[], modifier: FieldsModifier): string[];
-// export function pickFields(fields: IFields): string[];
+export type Fields = string | string[] | FieldsOptions;
+
 export function pickFields(fields: Fields, modifier?: FieldsModifier) {
 	let fs: string[];
 	if (typeof fields === 'string') {
@@ -129,15 +130,14 @@ export function filterDataFields(data: any, fields: Fields, modifier?: FieldsMod
 	}
 	return data;
 }
+
 //字段方案表,设置多种字段方案
 export class FieldScheme {
 	private m: { [scheme: string]: string };
-
 	constructor(m: { [scheme: string]: string }) {
 		this.m = m;
 	}
-
-	public getFields(fields: Fields): IFields {
+	public getFields(fields: Fields): FieldsOptions {
 		if (typeof fields === 'string') {
 			return { fields: this.m[fields] || fields };
 		} else if (Array.isArray(fields)) {

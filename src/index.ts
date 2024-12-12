@@ -11,8 +11,8 @@ export * from './list';
 export * from './trigger';
 
 //初始化
-import { CacheManager, ICache } from './core/cache';
-export function initCache(defaultCID: string, cacheMap: { [cid: string]: ICache }, defalutExpireMS?: number) {
+import { CacheManager, Cache } from './core/cache';
+export function initCache(defaultCID: string, cacheMap: { [cid: string]: Cache }, defalutExpireMS?: number) {
 	CacheManager.defaultCID = defaultCID;
 	CacheManager.cacheMap = cacheMap;
 	if (defalutExpireMS !== undefined) {

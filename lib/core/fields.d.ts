@@ -1,18 +1,18 @@
-export interface IAs {
+export interface As {
     as?: string;
 }
 export declare function hasAs(as: string, asField: string): boolean;
 export declare function attachAs(as: string, field: string): string;
 export declare function cutAs(as: string, asField: string): string;
-export type FieldsModifier = {
+export interface FieldsModifier {
     [name: string]: boolean | 'override';
-};
-export interface IFields extends IAs {
+}
+export interface FieldsOptions extends As {
     fields?: string | string[];
     fieldsModifier?: FieldsModifier;
     needFields?: string[];
 }
-export type Fields = string | string[] | IFields;
+export type Fields = string | string[] | FieldsOptions;
 export declare function pickFields(fields: Fields, modifier?: FieldsModifier): string[];
 export declare function filterDataFields(data: any, fields: Fields, modifier?: FieldsModifier): any;
 export declare class FieldScheme {
@@ -20,7 +20,7 @@ export declare class FieldScheme {
     constructor(m: {
         [scheme: string]: string;
     });
-    getFields(fields: Fields): IFields;
+    getFields(fields: Fields): FieldsOptions;
     pickFields(fields: Fields): string[];
     filterDataFields(data: any, fields: Fields): string;
 }

@@ -1,13 +1,13 @@
-import { IFields, attachAs, cutAs, hasAs, pickFields } from './fields';
-import { CacheManager, ICache, ICachePipeline } from './cache';
-import { IDataKey } from './keys';
+import { FieldsOptions, attachAs, cutAs, hasAs, pickFields } from './fields';
+import { CacheManager, Cache, CachePipeline } from './cache';
+import { DataKey } from './keys';
 
 //interfaces
-export interface IData {
+export interface Data {
 	[dataField: string]: any;
 }
-export interface IDataDescriptor extends IDataKey, IFields {}
-interface IHandledDataDescriptor extends IDataDescriptor {
+export interface DataDescriptor extends DataKey, FieldsOptions { }
+interface HandledDataDescriptor extends DataDescriptor {
 	__handled: boolean;
 	//as转换器
 	nas?: { [f: string]: string | false };
@@ -15,7 +15,7 @@ interface IHandledDataDescriptor extends IDataDescriptor {
 	//要去除的字段
 	dfieldMap?: { [f: string]: boolean };
 }
-function handleData(dd: any): IHandledDataDescriptor {
+function handleData(dd: any): HandledDataDescriptor {
 	dd.__handled = true;
 	//
 	if (!dd.as) {
@@ -34,17 +34,17 @@ function handleData(dd: any): IHandledDataDescriptor {
 	//
 	return dd;
 }
-function getPipeline(pl: undefined | string | ICache | ICachePipeline) {
+function getPipeline(pl: undefined | string | Cache | CachePipeline) {
 	if (!pl) {
 		return CacheManager.pipeline(CacheManager.defaultCID);
 	} else if (typeof pl === 'string') {
 		return CacheManager.pipeline(pl);
-	} else if ((pl as ICache).pipeline) {
-		return (pl as ICache).pipeline();
+	} else if ((pl as Cache).pipeline) {
+		return (pl as Cache).pipeline();
 	}
-	return pl as ICachePipeline;
+	return pl as CachePipeline;
 }
-export type DataTransformer = (data: IData) => any | Promise<any>;
+export type DataTransformer = (data: Data) => any | Promise<any>;
 // export interface IDataCorruptedInfo {
 // 	indexes: { [index: number | string]: IData };
 // 	pkfields: { [dataPkField: string]: any[] };
@@ -52,16 +52,16 @@ export type DataTransformer = (data: IData) => any | Promise<any>;
 
 //
 export function cget(
-	pl: ICachePipeline,
+	pl: CachePipeline,
 	context: { done?: boolean; data: any; ps?: Promise<any>[] },
 	index: undefined | number | string,
-	data: IData,
-	dds: IDataDescriptor[],
+	data: Data,
+	dds: DataDescriptor[],
 	transform?: DataTransformer
 ) {
 	let readCount = 0;
 	for (let dd of dds) {
-		let hdd = dd as IHandledDataDescriptor;
+		let hdd = dd as HandledDataDescriptor;
 		if (!hdd.__handled) handleData(hdd);
 		//
 		let key = pl.getCache().getKey('data', hdd.ns, hdd.nn || data[hdd.dataPkField]);
@@ -144,9 +144,9 @@ export function cget(
 	}
 }
 export async function cgetData(
-	cid: undefined | string | ICache | ICachePipeline,
-	data: IData | IData[],
-	dds: IDataDescriptor[],
+	cid: undefined | string | Cache | CachePipeline,
+	data: Data | Data[],
+	dds: DataDescriptor[],
 	transform?: DataTransformer
 ): Promise<any> {
 	let pl = getPipeline(cid);
@@ -169,17 +169,17 @@ export async function cgetData(
 
 //set
 export async function cset(
-	pl: ICachePipeline,
+	pl: CachePipeline,
 	context: { data: any; ps?: Promise<any>[] },
 	index: number | string,
-	data: IData,
-	dds: IDataDescriptor[],
+	data: Data,
+	dds: DataDescriptor[],
 	transform?: DataTransformer,
 	dataRefs?: { [dataPkField: string]: any },
 	expireMS?: number
 ) {
 	for (let dd of dds) {
-		let hdd = dd as IHandledDataDescriptor;
+		let hdd = dd as HandledDataDescriptor;
 		if (!hdd.__handled) handleData(hdd);
 		if (dds.length > 1 && !hdd.nas) throw new Error('should set `as` when data has more than one DataDescriptor');
 		//
@@ -247,9 +247,9 @@ export async function cset(
 	}
 }
 export async function csetData(
-	cid: undefined | string | ICache | ICachePipeline,
-	data: IData | IData[],
-	dds: IDataDescriptor[],
+	cid: undefined | string | Cache | CachePipeline,
+	data: Data | Data[],
+	dds: DataDescriptor[],
 	transform?: DataTransformer,
 	expireMS?: number
 ): Promise<any> {
@@ -302,8 +302,8 @@ export async function cdel(cid: undefined | string, key: string | { prefix?: str
 	}
 }
 export async function cdelDatas(
-	cid: undefined | string | ICache | ICachePipeline,
-	key: { prefix?: string } & IDataKey,
+	cid: undefined | string | Cache | CachePipeline,
+	key: { prefix?: string } & DataKey,
 	datas: any[]
 ) {
 	let pl = getPipeline(cid);

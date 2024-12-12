@@ -1,5 +1,5 @@
 import Redis, { ChainableCommander } from 'ioredis';
-import { ICache, ICachePipeline } from '../core/cache';
+import { Cache, CachePipeline } from '../core/cache';
 
 function toRedisValue(v: any) {
 	if (v === null || v === undefined) return 'null';
@@ -16,7 +16,7 @@ function getRedisValue(v: any) {
 }
 
 //ICache
-export class RedisCache implements ICache {
+export class RedisCache implements Cache {
 	public static CID = 'redis';
 
 	private redis: Redis;
@@ -82,12 +82,12 @@ export class RedisCache implements ICache {
 	// 	return this.redis.zadd(key, order, toRedisValue(value));
 	// }
 	//获取管道
-	public pipeline(): ICachePipeline {
+	public pipeline(): CachePipeline {
 		return new RedisPipeline(this, this.redis);
 	}
 }
 
-export class RedisPipeline implements ICachePipeline {
+export class RedisPipeline implements CachePipeline {
 	private parent: RedisCache;
 	private redis: Redis;
 	private pl: ChainableCommander;

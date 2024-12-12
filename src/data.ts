@@ -1,14 +1,14 @@
 import { CacheManager } from './core/cache';
-import { IDataDescriptor, cdel, cgetData, cset, csetData, IData, DataTransformer } from './core/cdata';
-import { IDataKey } from './core/keys';
+import { DataDescriptor, cdel, cgetData, cset, csetData, Data, DataTransformer } from './core/cdata';
+import { DataKey } from './core/keys';
 
 //--------------------数据操作--------------------
 //select
 export async function sel(
 	cid: undefined | string,
-	data: IData | IData[],
-	dds: IDataDescriptor[],
-	selector: () => Promise<IData | IData[]>,
+	data: Data | Data[],
+	dds: DataDescriptor[],
+	selector: () => Promise<Data | Data[]>,
 	transform?: DataTransformer,
 	forceDB?: boolean,
 	expireMS?: number
@@ -34,8 +34,8 @@ export async function selIn(
 	cid: undefined | string,
 	pkfield: string,
 	pkvalues: any[],
-	dd: IDataDescriptor,
-	selector: () => Promise<IData[]>,
+	dd: DataDescriptor,
+	selector: () => Promise<Data[]>,
 	transform?: DataTransformer,
 	forceDB?: boolean,
 	expireMS?: number
@@ -50,8 +50,8 @@ export async function selIn(
 //update
 export async function update(
 	cid: undefined | string,
-	data: IData | IData[],
-	dd: IDataDescriptor,
+	data: Data | Data[],
+	dd: DataDescriptor,
 	updater: (data?: any) => Promise<any>,
 	handleCache: 'update' | 'del' = 'del',
 	expireMS?: number
@@ -102,8 +102,8 @@ export async function update(
 //del
 export async function del(
 	cid: undefined | string,
-	data: IData | IData[],
-	key: IDataKey,
+	data: Data | Data[],
+	key: DataKey,
 	deleter: (data: any) => Promise<boolean>
 	//
 ) {

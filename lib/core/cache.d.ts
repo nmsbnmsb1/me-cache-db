@@ -1,4 +1,4 @@
-export interface ICache {
+export interface Cache {
     getKey(prefix: string, ns: string, nn: any): string;
     exists(key: string): Promise<boolean>;
     expire(key: string, ms: number): Promise<any>;
@@ -7,10 +7,10 @@ export interface ICache {
     set(key: string, field: string, value: any): Promise<any>;
     get(key: string): Promise<any>;
     get(key: string, fields: string[]): Promise<any>;
-    pipeline(): ICachePipeline;
+    pipeline(): CachePipeline;
 }
-export interface ICachePipeline {
-    getCache(): ICache;
+export interface CachePipeline {
+    getCache(): Cache;
     set(key: string, field: string, value: any): void;
     get(key: string, fields: undefined | string[], cb: (err: Error, values: any[] | {
         [field: string]: any;
@@ -22,9 +22,9 @@ export interface ICachePipeline {
 export declare class CacheManager {
     static defaultCID: string;
     static cacheMap: {
-        [cid: string]: ICache;
+        [cid: string]: Cache;
     };
     static defaultExpireMS: number;
-    static getCache(cid?: string): ICache;
-    static pipeline(cid?: string): ICachePipeline;
+    static getCache(cid?: string): Cache;
+    static pipeline(cid?: string): CachePipeline;
 }

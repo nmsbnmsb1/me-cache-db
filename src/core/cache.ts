@@ -1,5 +1,5 @@
 //缓存
-export interface ICache {
+export interface Cache {
 	//common
 	getKey(prefix: string, ns: string, nn: any): string;
 	//
@@ -12,11 +12,11 @@ export interface ICache {
 	get(key: string): Promise<any>;
 	get(key: string, fields: string[]): Promise<any>;
 	//获取管道
-	pipeline(): ICachePipeline;
+	pipeline(): CachePipeline;
 }
 //缓存Pipeline
-export interface ICachePipeline {
-	getCache(): ICache;
+export interface CachePipeline {
+	getCache(): Cache;
 	//
 	set(key: string, field: string, value: any): void;
 	get(
@@ -37,7 +37,7 @@ export interface ICachePipeline {
 
 export class CacheManager {
 	public static defaultCID: string;
-	public static cacheMap: { [cid: string]: ICache } = {};
+	public static cacheMap: { [cid: string]: Cache } = {};
 	public static defaultExpireMS: number = 3 * 24 * 60 * 60 * 1000;
 
 	public static getCache(cid?: string) {

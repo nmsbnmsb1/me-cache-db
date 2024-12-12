@@ -1,6 +1,6 @@
 import Redis, { ChainableCommander } from 'ioredis';
-import { ICache, ICachePipeline } from '../core/cache';
-export declare class RedisCache implements ICache {
+import { Cache, CachePipeline } from '../core/cache';
+export declare class RedisCache implements Cache {
     static CID: string;
     private redis;
     constructor(redis?: Redis);
@@ -12,9 +12,9 @@ export declare class RedisCache implements ICache {
     set(key: string, field: string, value: any): Promise<any>;
     get(key: string): Promise<any>;
     get(key: string, fields: string[]): Promise<any>;
-    pipeline(): ICachePipeline;
+    pipeline(): CachePipeline;
 }
-export declare class RedisPipeline implements ICachePipeline {
+export declare class RedisPipeline implements CachePipeline {
     private parent;
     private redis;
     private pl;

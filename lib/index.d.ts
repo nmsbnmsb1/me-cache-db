@@ -9,7 +9,7 @@ export * from './core/cdata';
 export * from './data';
 export * from './list';
 export * from './trigger';
-import { ICache } from './core/cache';
+import { Cache } from './core/cache';
 export declare function initCache(defaultCID: string, cacheMap: {
-    [cid: string]: ICache;
+    [cid: string]: Cache;
 }, defalutExpireMS?: number): void;

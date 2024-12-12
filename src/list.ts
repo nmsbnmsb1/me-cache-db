@@ -1,53 +1,50 @@
-import { INameKey } from './core/keys';
-import { IFields, attachAs } from './core/fields';
-import { ISqlOptions, OrderDefinition } from './core/db';
-import { IPageData } from './core/db.page';
-import { CacheManager, ICache } from './core/cache';
-import { IDataDescriptor, cgetData, cset, IData, DataTransformer } from './core/cdata';
+import { NameKey } from './core/keys';
+import { attachAs } from './core/fields';
+import { SqlOptions, OrderDefinition } from './core/db';
+import { PageData } from './core/db.page';
+import { CacheManager, Cache } from './core/cache';
+import { DataDescriptor, cgetData, cset, Data, DataTransformer } from './core/cdata';
 import { Trigger } from './trigger';
 
 //List查询器
-export interface IListSelField extends IFields, ISqlOptions {}
-export interface IListDataDescriptor extends IDataDescriptor, ISqlOptions {}
-export type IListSelector = (
-	listdds: IListDataDescriptor[],
-	page: number,
-	pageSize: number,
-	order: 'ASC' | 'DESC'
-) => Promise<{ count: number; datas: IData[] }>;
-export interface IList {
+export interface ListSelField extends SqlOptions { }
+export interface ListDataDescriptor extends DataDescriptor, SqlOptions { }
+export type ListSelector = (
+	listdds: ListDataDescriptor[], page: number, pageSize: number, order: 'ASC' | 'DESC'
+) => Promise<{ count: number; datas: Data[] }>;
+export interface List {
 	sel(
-		fields: IListSelField[],
+		fields: ListSelField[],
 		page: number,
 		pageSize: number,
 		order: 'ASC' | 'DESC',
 		raw?: boolean,
 		forceDB?: boolean
-	): Promise<IPageData>;
+	): Promise<PageData>;
 	del(delDatas: boolean, onDataRefsNotFound?: () => Promise<any[]>): Promise<void>;
 }
 
 //列表缓存
 //可以设置列表缓存，把整个列表根据分页和排序缓存
 //如果不设置cache的相关配置，则每次查询仅使用查询器selector查询，用于数据结构相同，但是不需要缓存的场景
-export interface IListCacheConfig {
+export interface ListCacheConfig {
 	cid: undefined | string;
-	listKey: INameKey;
+	listKey: NameKey;
 	expireMS?: number;
 }
-export class List implements IList {
+export class CommonList implements List {
 	private cid: undefined | string;
 	private listKey: string;
 	private expireMS: number;
-	private cache: ICache;
-	private dds: IDataDescriptor[];
-	private selector: IListSelector;
+	private cache: Cache;
+	private dds: DataDescriptor[];
+	private selector: ListSelector;
 	private transform: DataTransformer;
 
 	constructor(
-		cacheConfig: false | IListCacheConfig,
-		dds: IDataDescriptor[],
-		selector: IListSelector,
+		cacheConfig: false | ListCacheConfig,
+		dds: DataDescriptor[],
+		selector: ListSelector,
 		transform?: DataTransformer
 	) {
 		//设置缓存配置
@@ -63,15 +60,15 @@ export class List implements IList {
 		this.transform = transform;
 	}
 	public async sel(
-		fields: IListSelField[],
+		fields: ListSelField[],
 		page: number,
 		pageSize: number,
 		order: OrderDefinition = 'ASC',
 		raw?: boolean,
 		forceDB?: boolean
-	): Promise<IPageData> {
+	): Promise<PageData> {
 		//创建IListDataDescriptor结构
-		let listdds: IListDataDescriptor[] = [];
+		let listdds: ListDataDescriptor[] = [];
 		for (let i = 0; i < this.dds.length; i++) {
 			listdds.push({ ...this.dds[i], ...(fields ? fields[i] : undefined) });
 		}
@@ -184,33 +181,33 @@ export class List implements IList {
 }
 
 //混合列表套装
-export type IListFactory = (listConfig: INameKey & any) => IList;
+export type ListFactory = (listConfig: NameKey & any) => List;
 export class ListSet {
-	private factory: IListFactory;
-	private listMap: { [listName: string]: IList };
+	private factory: ListFactory;
+	private listMap: { [listName: string]: List };
 
-	constructor(listFactory: IListFactory) {
+	constructor(listFactory: ListFactory) {
 		this.factory = listFactory;
 		this.listMap = {};
 	}
 	//获取列表
 	public async sel(
 		//确定列表
-		listConfig: INameKey & any,
+		listConfig: NameKey & any,
 		//查询参数
-		fields: IListSelField[],
+		fields: ListSelField[],
 		page: number,
 		pageSize: number,
 		order: OrderDefinition = 'ASC',
 		raw?: boolean,
 		forceDB?: boolean
-	): Promise<IPageData> {
+	): Promise<PageData> {
 		let id = `${listConfig.ns}:${listConfig.nn}`;
 		let list = this.listMap[id] || (this.listMap[id] = this.factory(listConfig));
 		return list.sel(fields, page, pageSize, order, raw, forceDB);
 	}
 
-	public async del(key: INameKey, delDatas: boolean = false, onDataRefsNotFound?: () => Promise<any[]>) {
+	public async del(key: NameKey, delDatas: boolean = false, onDataRefsNotFound?: () => Promise<any[]>) {
 		let id = `${key.ns}:${key.nn}`;
 		let list = this.listMap[id];
 		return !list ? undefined : list.del(delDatas, onDataRefsNotFound);
@@ -228,7 +225,7 @@ export class ListSet {
 		}
 		return this;
 	}
-	private async onTrigger(keys: INameKey | INameKey[]) {
+	private async onTrigger(keys: NameKey | NameKey[]) {
 		if (!Array.isArray(keys)) keys = [keys];
 		//
 		let cache: any;

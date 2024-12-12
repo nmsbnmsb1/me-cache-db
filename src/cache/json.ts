@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
-import { CacheManager, ICache, ICachePipeline } from '../core/cache';
+import { CacheManager, Cache, CachePipeline } from '../core/cache';
 
 function getPath(rootPath: string, key: string) {
 	return path.resolve(rootPath, key);
@@ -14,7 +14,7 @@ function read(rootPath: string, key: string, createType?: 'Array' | 'Object') {
 		if (data.expire > 0 && Date.now() > data.expire) {
 			data = undefined;
 		}
-	} catch (e) {}
+	} catch (e) { }
 	//
 	if (!data && createType) {
 		data = {
@@ -30,13 +30,13 @@ function write(rootPath: string, key: string, data: any) {
 function del(rootPath: string, key: string) {
 	try {
 		fs.unlinkSync(getPath(rootPath, key));
-	} catch (e) {}
+	} catch (e) { }
 }
 
 const md5Map: { [key: string]: string } = {};
 
 //ICache
-export class JSONCache implements ICache {
+export class JSONCache implements Cache {
 	public static CID = 'json';
 
 	private rootPath = path.resolve();
@@ -103,12 +103,12 @@ export class JSONCache implements ICache {
 		return ndata;
 	}
 	//
-	public pipeline(): ICachePipeline {
+	public pipeline(): CachePipeline {
 		return new JSONPipeline(this, this.rootPath);
 	}
 }
 
-export class JSONPipeline implements ICachePipeline {
+export class JSONPipeline implements CachePipeline {
 	private parent: JSONCache;
 	private rootPath: string;
 	private dataMap: { [p: string]: any } = {};
