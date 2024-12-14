@@ -9,13 +9,15 @@ export interface Data {
 export interface DataDescriptor extends DataKey, FieldsOptions { }
 interface HandledDataDescriptor extends DataDescriptor {
 	__handled: boolean;
+	//
+	//fieldsNeeded?: string[];
 	//as转换器
 	nas?: { [f: string]: string | false };
 	dataPkField?: string;
 	//要去除的字段
 	dfieldMap?: { [f: string]: boolean };
 }
-function handleData(dd: any): HandledDataDescriptor {
+function handleData(dd: DataDescriptor & HandledDataDescriptor): HandledDataDescriptor {
 	dd.__handled = true;
 	//
 	if (!dd.as) {
@@ -29,8 +31,8 @@ function handleData(dd: any): HandledDataDescriptor {
 		}
 	}
 	//
-	if (dd.fields) dd.needFields = pickFields(dd);
-	if (dd.needFields) dd.dfieldMap = {};
+	if (dd.fields) dd.fieldsNeeded = pickFields(dd);
+	if (dd.fieldsNeeded) dd.dfieldMap = {};
 	//
 	return dd;
 }
@@ -65,9 +67,9 @@ export function cget(
 		if (!hdd.__handled) handleData(hdd);
 		//
 		let key = pl.getCache().getKey('data', hdd.ns, hdd.nn || data[hdd.dataPkField]);
-		let { as, pkfield, needFields } = hdd;
+		let { as, pkfield, fieldsNeeded } = hdd;
 		let { nas, dataPkField, dfieldMap } = hdd;
-		pl.get(key, needFields, (err: Error, values: any, valueConvetor: any) => {
+		pl.get(key, fieldsNeeded, (err: Error, values: any, valueConvetor: any) => {
 			//如果群组出错了，则直接退出
 			if (context.done === false) return;
 			//解析缓存数据
@@ -88,8 +90,8 @@ export function cget(
 					return true;
 				};
 				if (Array.isArray(values)) {
-					for (let k = 0; k < needFields.length; k++) {
-						if (!fn(needFields[k], values[k])) {
+					for (let k = 0; k < fieldsNeeded.length; k++) {
+						if (!fn(fieldsNeeded[k], values[k])) {
 							readDone = false;
 							break;
 						}
@@ -114,11 +116,11 @@ export function cget(
 			}
 			//只有pkfield可能不在需要的字段列表里
 			//在get方法里，nas使用了pkfield做key,所以在dfields中也使用pkfield做key
-			if (pkfield && needFields && dfieldMap[pkfield] !== false) {
+			if (pkfield && fieldsNeeded && dfieldMap[pkfield] !== false) {
 				if (dfieldMap[pkfield]) {
 					//去除
 					delete data[dataPkField];
-				} else if (needFields.indexOf(pkfield) < 0) {
+				} else if (fieldsNeeded.indexOf(pkfield) < 0) {
 					//去除
 					dfieldMap[pkfield] = true;
 					delete data[dataPkField];
@@ -184,7 +186,7 @@ export async function cset(
 		if (dds.length > 1 && !hdd.nas) throw new Error('should set `as` when data has more than one DataDescriptor');
 		//
 		let key = pl.getCache().getKey('data', hdd.ns, hdd.nn || data[hdd.dataPkField]);
-		let { as, needFields } = hdd;
+		let { as, fieldsNeeded } = hdd;
 		let { nas, dataPkField, dfieldMap } = hdd;
 		//放在前面设置，后面可能会删除字段
 		if (dataRefs) dataRefs[dataPkField] = data[dataPkField];
@@ -218,11 +220,11 @@ export async function cset(
 			}
 			pl.set(key, field, data[dataField]);
 			//如果需要返回ndata，去除无用的字段
-			if (needFields && dfieldMap[dataField] !== false) {
+			if (fieldsNeeded && dfieldMap[dataField] !== false) {
 				if (dfieldMap[dataField]) {
 					//去除
 					delete data[dataField];
-				} else if (needFields.indexOf(field) < 0) {
+				} else if (fieldsNeeded.indexOf(field) < 0) {
 					//去除
 					dfieldMap[dataField] = true;
 					delete data[dataField];

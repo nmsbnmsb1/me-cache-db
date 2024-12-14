@@ -85,7 +85,7 @@ export interface FieldsModifier {
 export interface FieldsOptions extends As {
 	fields?: string | string[];
 	fieldsModifier?: FieldsModifier;
-	needFields?: string[];
+	fieldsNeeded?: string[];
 }
 export type Fields = string | string[] | FieldsOptions;
 
@@ -133,22 +133,32 @@ export function filterDataFields(data: any, fields: Fields, modifier?: FieldsMod
 
 //字段方案表,设置多种字段方案
 export class FieldScheme {
-	private m: { [scheme: string]: string };
-	constructor(m: { [scheme: string]: string }) {
-		this.m = m;
-	}
-	public getFields(fields: Fields): FieldsOptions {
-		if (typeof fields === 'string') {
-			return { fields: this.m[fields] || fields };
-		} else if (Array.isArray(fields)) {
-			return { fields: fields };
+	private base: string[]
+	private m: { [scheme: string]: string[] };
+	constructor(base: string | string[], m: { [scheme: string]: string | string[] | FieldsModifier }) {
+		this.base = typeof base === 'string' ? base.split(',') : base;
+		//预缓存m
+		this.m = {};
+		for (let scheme in m) {
+			let config = m[scheme]
+			if (typeof config === 'string') this.m[scheme] = config.split(',');
+			else if (Array.isArray(config)) this.m[scheme] = config
+			else {
+				this.m[scheme] = pickFields(this.base, config as FieldsModifier)
+			}
 		}
-		return fields;
 	}
-	public pickFields(fields: Fields): string[] {
-		return pickFields(this.getFields(fields));
+	public getBase() {
+		return this.base.slice()
 	}
-	public filterDataFields(data: any, fields: Fields): string {
+	//根据方案名获取需要的字段
+	public getFields(fields: string | Fields): string[] {
+		return typeof fields === 'string' && this.m[fields] ? this.m[fields].slice() : pickFields(fields);
+	}
+	public getFieldsOptions(fields: string | Fields): FieldsOptions {
+		return { fields: this.getFields(fields) };
+	}
+	public filterDataFields(data: any, fields: string | Fields): string {
 		return filterDataFields(data, this.getFields(fields));
 	}
 }

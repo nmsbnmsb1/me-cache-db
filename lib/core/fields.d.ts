@@ -10,17 +10,19 @@ export interface FieldsModifier {
 export interface FieldsOptions extends As {
     fields?: string | string[];
     fieldsModifier?: FieldsModifier;
-    needFields?: string[];
+    fieldsNeeded?: string[];
 }
 export type Fields = string | string[] | FieldsOptions;
 export declare function pickFields(fields: Fields, modifier?: FieldsModifier): string[];
 export declare function filterDataFields(data: any, fields: Fields, modifier?: FieldsModifier): any;
 export declare class FieldScheme {
+    private base;
     private m;
-    constructor(m: {
-        [scheme: string]: string;
+    constructor(base: string | string[], m: {
+        [scheme: string]: string | string[] | FieldsModifier;
     });
-    getFields(fields: Fields): FieldsOptions;
-    pickFields(fields: Fields): string[];
-    filterDataFields(data: any, fields: Fields): string;
+    getBase(): string[];
+    getFields(fields: string | Fields): string[];
+    getFieldsOptions(fields: string | Fields): FieldsOptions;
+    filterDataFields(data: any, fields: string | Fields): string;
 }
