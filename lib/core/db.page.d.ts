@@ -1,4 +1,4 @@
-export type PageQuery = (sql: string) => Promise<any>;
+export type PageQuery = (querySql: string) => Promise<any>;
 export interface PageData {
     count: number;
     page: number;
@@ -6,4 +6,4 @@ export interface PageData {
     totalPages: number;
     datas: any[];
 }
-export declare function doPage(page: number, pageSize: number, countField: string, sql: string, query: PageQuery): Promise<PageData>;
+export declare function doPage(page: number, pageSize: number, countField: string, selectSql: string, query: PageQuery): Promise<PageData>;

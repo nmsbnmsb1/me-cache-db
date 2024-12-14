@@ -10,7 +10,7 @@ export interface DataDescriptor extends DataKey, FieldsOptions { }
 interface HandledDataDescriptor extends DataDescriptor {
 	__handled: boolean;
 	//
-	//fieldsNeeded?: string[];
+	fieldsNeeded?: string[];
 	//as转换器
 	nas?: { [f: string]: string | false };
 	dataPkField?: string;
@@ -31,7 +31,7 @@ function handleData(dd: DataDescriptor & HandledDataDescriptor): HandledDataDesc
 		}
 	}
 	//
-	if (dd.fields) dd.fieldsNeeded = pickFields(dd);
+	if (dd.fields) dd.fieldsNeeded = pickFields(dd.fields)
 	if (dd.fieldsNeeded) dd.dfieldMap = {};
 	//
 	return dd;

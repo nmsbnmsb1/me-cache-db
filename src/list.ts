@@ -1,5 +1,5 @@
 import { NameKey } from './core/keys';
-import { attachAs } from './core/fields';
+import { FieldsOptions, attachAs } from './core/fields';
 import { SqlOptions, OrderDefinition } from './core/db';
 import { PageData } from './core/db.page';
 import { CacheManager, Cache } from './core/cache';
@@ -7,8 +7,8 @@ import { DataDescriptor, cgetData, cset, Data, DataTransformer } from './core/cd
 import { Trigger } from './trigger';
 
 //List查询器
-export interface ListSelField extends SqlOptions { }
 export interface ListDataDescriptor extends DataDescriptor, SqlOptions { }
+export interface ListSelField extends FieldsOptions, SqlOptions { }
 export type ListSelector = (
 	listdds: ListDataDescriptor[], page: number, pageSize: number, order: 'ASC' | 'DESC'
 ) => Promise<{ count: number; datas: Data[] }>;

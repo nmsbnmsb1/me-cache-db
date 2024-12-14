@@ -7,14 +7,13 @@ export declare function cutAs(as: string, asField: string): string;
 export interface FieldsModifier {
     [name: string]: boolean | 'override';
 }
-export interface FieldsOptions extends As {
-    fields?: string | string[];
-    fieldsModifier?: FieldsModifier;
-    fieldsNeeded?: string[];
+export interface FieldsPicker {
+    base: string | string[];
+    modifier: FieldsModifier;
 }
-export type Fields = string | string[] | FieldsOptions;
-export declare function pickFields(fields: Fields, modifier?: FieldsModifier): string[];
-export declare function filterDataFields(data: any, fields: Fields, modifier?: FieldsModifier): any;
+export type Fields = string | string[] | FieldsPicker;
+export declare function pickFields(base: Fields, modifier?: FieldsModifier): string[];
+export declare function filterDataFields(data: any, base: Fields, modifier?: FieldsModifier): any;
 export declare class FieldScheme {
     private base;
     private m;
@@ -22,7 +21,12 @@ export declare class FieldScheme {
         [scheme: string]: string | string[] | FieldsModifier;
     });
     getBase(): string[];
-    getFields(fields: string | Fields): string[];
-    getFieldsOptions(fields: string | Fields): FieldsOptions;
-    filterDataFields(data: any, fields: string | Fields): string;
+    getFields(fields: string | string[] | FieldsModifier | FieldsPicker): string[];
+    getFieldsOptions(fields: string | string[] | FieldsModifier | FieldsPicker): FieldsOptions;
+    getDbFieldsOptions(fields: string | string[] | FieldsModifier | FieldsPicker): FieldsOptions;
+    filterDataFields(data: any, fields: string | string[] | FieldsModifier | FieldsPicker): string;
+}
+export interface FieldsOptions extends As {
+    fields?: Fields;
+    dbFields?: Fields;
 }

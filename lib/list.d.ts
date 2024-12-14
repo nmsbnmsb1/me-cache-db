@@ -1,10 +1,11 @@
 import { NameKey } from './core/keys';
+import { FieldsOptions } from './core/fields';
 import { SqlOptions, OrderDefinition } from './core/db';
 import { PageData } from './core/db.page';
 import { DataDescriptor, Data, DataTransformer } from './core/cdata';
-export interface ListSelField extends SqlOptions {
-}
 export interface ListDataDescriptor extends DataDescriptor, SqlOptions {
+}
+export interface ListSelField extends FieldsOptions, SqlOptions {
 }
 export type ListSelector = (listdds: ListDataDescriptor[], page: number, pageSize: number, order: 'ASC' | 'DESC') => Promise<{
     count: number;

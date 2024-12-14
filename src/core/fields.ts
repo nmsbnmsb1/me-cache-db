@@ -79,58 +79,53 @@ export function cutAs(as: string, asField: string) {
 // }
 //Field 字段处理 ------------------------------------------------------------------------
 
-export interface FieldsModifier {
-	[name: string]: boolean | 'override'
-};
-export interface FieldsOptions extends As {
-	fields?: string | string[];
-	fieldsModifier?: FieldsModifier;
-	fieldsNeeded?: string[];
-}
-export type Fields = string | string[] | FieldsOptions;
 
-export function pickFields(fields: Fields, modifier?: FieldsModifier) {
-	let fs: string[];
-	if (typeof fields === 'string') {
-		fs = fields.split(',');
-	} else if (Array.isArray(fields)) {
-		fs = fields.slice();
-	} else if (fields.fields) {
-		fs = typeof fields.fields === 'string' ? fields.fields.split(',') : fields.fields.slice();
-		modifier = fields.fieldsModifier;
-	}
+
+//生成字段
+
+export interface FieldsModifier { [name: string]: boolean | 'override' };
+export interface FieldsPicker { base: string | string[], modifier: FieldsModifier };
+export type Fields = string | string[] | FieldsPicker
+export function pickFields(base: Fields, modifier?: FieldsModifier) {
+	let result: string[];
 	//
+	let baseFields: any = base;
+	if ((base as FieldsPicker).base) { baseFields = (base as FieldsPicker).base }
+	if (typeof baseFields === 'string') {
+		result = baseFields.split(',');
+	} else if (Array.isArray(baseFields)) {
+		result = baseFields.slice();
+	}
+	if (!modifier && (base as FieldsPicker).modifier) { modifier = (base as FieldsPicker).modifier }
 	if (modifier) {
 		for (let n in modifier) {
 			let tmp = n.split(',');
 			if (modifier[n] === 'override') {
-				fs = tmp;
+				result = tmp;
 				break;
 			}
-			//
 			for (let f of tmp) {
-				let index = fs.indexOf(f);
+				let index = result.indexOf(f);
 				if (modifier[n] === true && index < 0) {
-					fs.push(f);
+					result.push(f);
 				} else if (modifier[n] === false && index >= 0) {
-					fs.splice(index, 1);
+					result.splice(index, 1);
 				}
 			}
 		}
 	}
-	// console.log(fs);
-	return fs;
+	// console.log(result);
+	return result;
 }
-export function filterDataFields(data: any, fields: Fields, modifier?: FieldsModifier) {
-	let fs = pickFields(fields, modifier);
+export function filterDataFields(data: any, base: Fields, modifier?: FieldsModifier) {
+	let result = pickFields(base, modifier);
 	for (let k in data) {
-		if (fs.indexOf(k) < 0) {
+		if (result.indexOf(k) < 0) {
 			delete data[k];
 		}
 	}
 	return data;
 }
-
 //字段方案表,设置多种字段方案
 export class FieldScheme {
 	private base: string[]
@@ -143,22 +138,36 @@ export class FieldScheme {
 			let config = m[scheme]
 			if (typeof config === 'string') this.m[scheme] = config.split(',');
 			else if (Array.isArray(config)) this.m[scheme] = config
-			else {
-				this.m[scheme] = pickFields(this.base, config as FieldsModifier)
-			}
+			else this.m[scheme] = pickFields(this.base, config as FieldsModifier)
 		}
 	}
 	public getBase() {
 		return this.base.slice()
 	}
 	//根据方案名获取需要的字段
-	public getFields(fields: string | Fields): string[] {
-		return typeof fields === 'string' && this.m[fields] ? this.m[fields].slice() : pickFields(fields);
+	public getFields(fields: string | string[] | FieldsModifier | FieldsPicker): string[] {
+		if (typeof fields === 'string') {
+			if (this.m[fields]) return this.m[fields].slice();
+			return fields.split(',');
+		}
+		if (Array.isArray(fields)) return fields.slice();
+		if ((fields as FieldsPicker).base && (fields as FieldsPicker).modifier)
+			return pickFields(fields as FieldsPicker)
+		return pickFields(this.base, fields as FieldsModifier)
 	}
-	public getFieldsOptions(fields: string | Fields): FieldsOptions {
+	public getFieldsOptions(fields: string | string[] | FieldsModifier | FieldsPicker): FieldsOptions {
 		return { fields: this.getFields(fields) };
 	}
-	public filterDataFields(data: any, fields: string | Fields): string {
+	public getDbFieldsOptions(fields: string | string[] | FieldsModifier | FieldsPicker): FieldsOptions {
+		return { dbFields: this.getFields(fields) };
+	}
+	public filterDataFields(data: any, fields: string | string[] | FieldsModifier | FieldsPicker): string {
 		return filterDataFields(data, this.getFields(fields));
 	}
+}
+export interface FieldsOptions extends As {
+	//for cache
+	fields?: Fields;
+	//for sql
+	dbFields?: Fields;
 }

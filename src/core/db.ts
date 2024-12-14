@@ -28,17 +28,19 @@ export function getLeftJoinSql(options: SqlOptions[]) {
 	let whereSql = '';
 	let orderSql = '';
 	for (let option of options) {
-		let { as, fieldsNeeded } = option;
-		if (!fieldsNeeded) fieldsNeeded = option.fieldsNeeded = pickFields(option);
+		let { dbFieldsNeeded } = options as any
+		if (!dbFieldsNeeded) dbFieldsNeeded = (option as any).dbFieldsNeeded = pickFields(option.dbFields);
+		//
+		let { as } = option;
 		let { tableName, on, where, order } = option;
 		let asPrefix = !as ? '' : `${as}.`;
 		//select
 		{
 			if (!as) {
-				selectSql = `${!selectSql ? '' : ','}\`${fieldsNeeded.join(`\`,\``)}\``;
+				selectSql = `${!selectSql ? '' : ','}\`${dbFieldsNeeded.join(`\`,\``)}\``;
 			} else {
-				for (let i = 0; i < fieldsNeeded.length; i++) {
-					selectSql += `${!selectSql ? '' : ','}${as}.${fieldsNeeded[i]} as \`${as}_${fieldsNeeded[i]}\``;
+				for (let i = 0; i < dbFieldsNeeded.length; i++) {
+					selectSql += `${!selectSql ? '' : ','}${as}.${dbFieldsNeeded[i]} as \`${as}_${dbFieldsNeeded[i]}\``;
 				}
 			}
 		}
