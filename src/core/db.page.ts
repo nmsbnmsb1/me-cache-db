@@ -9,8 +9,8 @@ export interface PageData {
 }
 
 export async function doPage(page: number, pageSize: number, countField: string, selectSql: string, query: PageQuery) {
-	let totalCount;
-	let rs;
+	let totalCount: number;
+	let rs: any;
 	//如果分页查询
 	if (pageSize > 0) {
 		let countData = await query(`select COUNT(${countField}) as count from (${selectSql}) as a`);

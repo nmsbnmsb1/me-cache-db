@@ -3,10 +3,11 @@ export function toBoolean(b: any) {
 	if (typeof b === 'boolean') return b === true ? 1 : 0;
 	return b ? 1 : 0;
 }
+// biome-ignore lint/suspicious/noShadowRestrictedNames: 就使用这个名称
 export function escape(str: string) {
 	if (!str) return '';
 	// str = mysql.escape(str);
-	// eslint-disable-next-line no-control-regex
+	// biome-ignore lint/suspicious/noControlCharactersInRegex: 1
 	return str.replace(/[\0\n\r\b\t\\'"\x1a]/g, (s: string) => {
 		switch (s) {
 			case '\0':

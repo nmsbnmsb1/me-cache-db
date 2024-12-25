@@ -1,7 +1,6 @@
-import { Cache, CachePipeline } from '../core/cache';
+import type { Cache, CachePipeline } from "../core/cache";
 export declare class NullCache implements Cache {
     static CID: string;
-    constructor();
     getKey(prefix: string, ns: string, nn: any): string;
     exists(key: string): Promise<boolean>;
     expire(key: string, ms?: number): Promise<void>;

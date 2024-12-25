@@ -1,12 +1,12 @@
-import { FieldsOptions, attachAs, cutAs, hasAs, pickFields } from './fields';
-import { CacheManager, Cache, CachePipeline } from './cache';
-import { DataKey } from './keys';
+import { type FieldsOptions, attachAs, cutAs, hasAs, pickFields } from './fields';
+import { CacheManager, type Cache, type CachePipeline } from './cache';
+import type { DataKey } from './keys';
 
 //interfaces
 export interface Data {
 	[dataField: string]: any;
 }
-export interface DataDescriptor extends DataKey, FieldsOptions { }
+export interface DataDescriptor extends DataKey, FieldsOptions {}
 interface HandledDataDescriptor extends DataDescriptor {
 	__handled: boolean;
 	//
@@ -31,7 +31,7 @@ function handleData(dd: DataDescriptor & HandledDataDescriptor): HandledDataDesc
 		}
 	}
 	//
-	if (dd.fields) dd.fieldsNeeded = pickFields(dd.fields)
+	if (dd.fields) dd.fieldsNeeded = pickFields(dd.fields);
 	if (dd.fieldsNeeded) dd.dfieldMap = {};
 	//
 	return dd;
@@ -39,9 +39,11 @@ function handleData(dd: DataDescriptor & HandledDataDescriptor): HandledDataDesc
 function getPipeline(pl: undefined | string | Cache | CachePipeline) {
 	if (!pl) {
 		return CacheManager.pipeline(CacheManager.defaultCID);
-	} else if (typeof pl === 'string') {
+	}
+	if (typeof pl === 'string') {
 		return CacheManager.pipeline(pl);
-	} else if ((pl as Cache).pipeline) {
+	}
+	if ((pl as Cache).pipeline) {
 		return (pl as Cache).pipeline();
 	}
 	return pl as CachePipeline;
@@ -283,9 +285,8 @@ export async function cexists(cid: undefined | string, key: string | { prefix?: 
 	if (cache) {
 		if (typeof key === 'string') {
 			return cache.exists(key);
-		} else {
-			return cache.exists(cache.getKey(key.prefix || 'data', key.ns, key.nn));
 		}
+		return cache.exists(cache.getKey(key.prefix || 'data', key.ns, key.nn));
 	}
 	return false;
 }
@@ -298,9 +299,8 @@ export async function cdel(cid: undefined | string, key: string | { prefix?: str
 	if (cache) {
 		if (typeof key === 'string') {
 			return cache.del(key);
-		} else {
-			return cache.del(cache.getKey(key.prefix || 'data', key.ns, key.nn));
 		}
+		return cache.del(cache.getKey(key.prefix || 'data', key.ns, key.nn));
 	}
 }
 export async function cdelDatas(
@@ -332,8 +332,7 @@ export async function cexpire(
 	if (cache) {
 		if (typeof key === 'string') {
 			return cache.expire(key, ms);
-		} else {
-			return cache.expire(cache.getKey(key.prefix || 'data', key.ns, key.nn), ms);
 		}
+		return cache.expire(cache.getKey(key.prefix || 'data', key.ns, key.nn), ms);
 	}
 }

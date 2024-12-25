@@ -15,8 +15,12 @@ export type WhereOperator =
 export type WhereValue = null | undefined | string | number;
 export type WhereMultiValue = WhereValue[];
 export type WhereOP = [WhereOperator, WhereValue | WhereMultiValue];
-export interface WhereLogic { _logic?: string };
-export type WhereComposite = WhereLogic & { [key in WhereOperator]?: WhereValue | WhereMultiValue };
+export interface WhereLogic {
+	_logic?: string;
+}
+export type WhereComposite = WhereLogic & {
+	[key in WhereOperator]?: WhereValue | WhereMultiValue;
+};
 export type Where = WhereValue | WhereOP | WhereComposite;
 export interface WhereOptions extends WhereLogic {
 	[field: string]: Where;
@@ -24,18 +28,19 @@ export interface WhereOptions extends WhereLogic {
 
 function getValueSql(v: WhereValue | WhereMultiValue): string {
 	if (v === null || v === undefined) {
-		return `NULL`;
-	} else if (typeof v === 'string') {
+		return 'NULL';
+	}
+	if (typeof v === 'string') {
 		// 将反斜杠转义为双反斜杠
 		v = v.replace(/\\/g, '\\\\');
 		// 将单引号转义为两个单引号
 		v = v.replace(/'/g, "''");
 		return `'${v}'`;
-	} else if (Array.isArray(v)) {
-		return v.map(getValueSql).join(',');
-	} else {
-		return `${v}`;
 	}
+	if (Array.isArray(v)) {
+		return v.map(getValueSql).join(',');
+	}
+	return `${v}`;
 }
 
 // 解析OP
@@ -48,7 +53,7 @@ export function getFieldWhereSql(field: string, where: Where): string {
 	if (Array.isArray(where)) {
 		let [op, v] = where;
 		let operator = op.toUpperCase();
-		if (operator === '!=' && (v == null || v == undefined)) {
+		if (operator === '!=' && (v == null || v === undefined)) {
 			return `\`${field}\` IS NOT NULL`;
 		}
 		if (!Array.isArray(v)) {
@@ -56,9 +61,11 @@ export function getFieldWhereSql(field: string, where: Where): string {
 		}
 		if (operator === 'LIKE' || operator === 'NOT LIKE') {
 			return v.map((vv) => `\`${field}\` ${operator} '${vv}'`).join(' OR ');
-		} else if (operator === 'IN' || operator === 'NOT IN') {
+		}
+		if (operator === 'IN' || operator === 'NOT IN') {
 			return `\`${field}\` ${operator} (${v.map(getValueSql).join(',')})`;
-		} else if (operator === 'BETWEEN' || operator === 'NOT BETWEEN') {
+		}
+		if (operator === 'BETWEEN' || operator === 'NOT BETWEEN') {
 			return `\`${field}\` ${operator} ${getValueSql(v[0])} AND ${getValueSql(v[1])}`;
 		}
 	}
@@ -97,7 +104,8 @@ function _getWhereSql(asPrefix: string, wo: WhereOptions, isChild: boolean): str
 	let length = sqls.length;
 	if (length <= 0) {
 		return '';
-	} else if (length === 1) {
+	}
+	if (length === 1) {
 		return sqls[0];
 	}
 	let logic = !wo._logic ? 'AND' : (wo._logic as string).toUpperCase();

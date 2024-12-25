@@ -1,6 +1,6 @@
-import { FieldsOptions } from './fields';
-import { Cache, CachePipeline } from './cache';
-import { DataKey } from './keys';
+import { type FieldsOptions } from './fields';
+import { type Cache, type CachePipeline } from './cache';
+import type { DataKey } from './keys';
 export interface Data {
     [dataField: string]: any;
 }

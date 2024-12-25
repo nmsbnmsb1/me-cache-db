@@ -1,7 +1,7 @@
-import path from 'path';
-import fs from 'fs';
-import crypto from 'crypto';
-import { CacheManager, Cache, CachePipeline } from '../core/cache';
+import path from 'node:path';
+import fs from 'node:fs';
+import crypto from 'node:crypto';
+import { CacheManager, type Cache, type CachePipeline } from '../core/cache';
 
 function getPath(rootPath: string, key: string) {
 	return path.resolve(rootPath, key);
@@ -14,7 +14,7 @@ function read(rootPath: string, key: string, createType?: 'Array' | 'Object') {
 		if (data.expire > 0 && Date.now() > data.expire) {
 			data = undefined;
 		}
-	} catch (e) { }
+	} catch (e) {}
 	//
 	if (!data && createType) {
 		data = {
@@ -30,7 +30,7 @@ function write(rootPath: string, key: string, data: any) {
 function del(rootPath: string, key: string) {
 	try {
 		fs.unlinkSync(getPath(rootPath, key));
-	} catch (e) { }
+	} catch (e) {}
 }
 
 const md5Map: { [key: string]: string } = {};
@@ -149,7 +149,8 @@ export class JSONPipeline implements CachePipeline {
 		let data = this.getData(key);
 		if (!data) {
 			return cb(undefined, undefined);
-		} else if (!fields) {
+		}
+		if (!fields) {
 			return cb(undefined, data.data);
 		}
 		//
@@ -174,6 +175,7 @@ export class JSONPipeline implements CachePipeline {
 		for (let key in this.dataMap) {
 			let data = this.dataMap[key];
 			if (data.needWrite) {
+				//biome-ignore lint/performance/noDelete: 忽略
 				delete data.needWrite;
 				write(this.rootPath, key, data);
 			}

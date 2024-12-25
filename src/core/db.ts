@@ -1,5 +1,5 @@
-import { FieldsOptions, pickFields } from './fields';
-import { WhereOptions, getWhereSql } from './db.where';
+import { type FieldsOptions, pickFields } from './fields';
+import { type WhereOptions, getWhereSql } from './db.where';
 
 //----------------------------------------Sel----------------------------------------
 export type SqlStatement = string | (() => string);
@@ -28,7 +28,7 @@ export function getLeftJoinSql(options: SqlOptions[]) {
 	let whereSql = '';
 	let orderSql = '';
 	for (let option of options) {
-		let { dbFieldsNeeded } = options as any
+		let { dbFieldsNeeded } = options as any;
 		if (!dbFieldsNeeded) dbFieldsNeeded = (option as any).dbFieldsNeeded = pickFields(option.dbFields);
 		//
 		let { as } = option;
@@ -37,6 +37,7 @@ export function getLeftJoinSql(options: SqlOptions[]) {
 		//select
 		{
 			if (!as) {
+				//biome-ignore lint/style/noUnusedTemplateLiteral: ignore
 				selectSql = `${!selectSql ? '' : ','}\`${dbFieldsNeeded.join(`\`,\``)}\``;
 			} else {
 				for (let i = 0; i < dbFieldsNeeded.length; i++) {
@@ -53,8 +54,9 @@ export function getLeftJoinSql(options: SqlOptions[]) {
 				for (let field in on) {
 					//a.uuid = b.uuid
 					let { tableName, onField } = on[field];
-					fromSql = `(${fromSql}) left join ${tsql} on ${asPrefix}${field} = ${!tableMap[tableName].as ? '' : `${tableMap[tableName].as}.`
-						}${onField}`;
+					fromSql = `(${fromSql}) left join ${tsql} on ${asPrefix}${field} = ${
+						!tableMap[tableName].as ? '' : `${tableMap[tableName].as}.`
+					}${onField}`;
 				}
 			}
 		}

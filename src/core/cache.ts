@@ -35,17 +35,23 @@ export interface CachePipeline {
 	exec(): Promise<any>;
 }
 
-export class CacheManager {
-	public static defaultCID: string;
-	public static cacheMap: { [cid: string]: Cache } = {};
-	public static defaultExpireMS: number = 3 * 24 * 60 * 60 * 1000;
+export const CacheManager: {
+	defaultCID: string;
+	cacheMap: { [cid: string]: Cache };
+	defaultExpireMS: number;
+	getCache(cid?: string): Cache;
+	pipeline(cid?: string): CachePipeline;
+} = {
+	defaultCID: '',
+	cacheMap: {},
+	defaultExpireMS: 3 * 24 * 60 * 60 * 1000,
 
-	public static getCache(cid?: string) {
+	getCache(cid?: string) {
 		return CacheManager.cacheMap[cid || CacheManager.defaultCID];
-	}
-	public static pipeline(cid?: string) {
+	},
+	pipeline(cid?: string) {
 		let cache = CacheManager.cacheMap[cid || CacheManager.defaultCID];
 		if (!cache) return;
 		return cache.pipeline();
-	}
-}
+	},
+};

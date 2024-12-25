@@ -19,12 +19,12 @@ export interface CachePipeline {
     del(key: string): void;
     exec(): Promise<any>;
 }
-export declare class CacheManager {
-    static defaultCID: string;
-    static cacheMap: {
+export declare const CacheManager: {
+    defaultCID: string;
+    cacheMap: {
         [cid: string]: Cache;
     };
-    static defaultExpireMS: number;
-    static getCache(cid?: string): Cache;
-    static pipeline(cid?: string): CachePipeline;
-}
+    defaultExpireMS: number;
+    getCache(cid?: string): Cache;
+    pipeline(cid?: string): CachePipeline;
+};

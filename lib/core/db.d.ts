@@ -1,5 +1,5 @@
-import { FieldsOptions } from './fields';
-import { WhereOptions } from './db.where';
+import { type FieldsOptions } from './fields';
+import { type WhereOptions } from './db.where';
 export type SqlStatement = string | (() => string);
 export interface OnOptions {
     [field: string]: {

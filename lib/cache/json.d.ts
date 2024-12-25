@@ -1,4 +1,4 @@
-import { Cache, CachePipeline } from '../core/cache';
+import { type Cache, type CachePipeline } from '../core/cache';
 export declare class JSONCache implements Cache {
     static CID: string;
     private rootPath;
