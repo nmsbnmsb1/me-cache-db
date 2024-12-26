@@ -1,5 +1,5 @@
-import { type FieldsOptions, pickFields } from './fields';
 import { type WhereOptions, getWhereSql } from './db.where';
+import { type FieldsOptions, pickFields } from './fields';
 
 //----------------------------------------Sel----------------------------------------
 export type SqlStatement = string | (() => string);
@@ -37,7 +37,6 @@ export function getLeftJoinSql(options: SqlOptions[]) {
 		//select
 		{
 			if (!as) {
-				//biome-ignore lint/style/noUnusedTemplateLiteral: ignore
 				selectSql = `${!selectSql ? '' : ','}\`${dbFieldsNeeded.join(`\`,\``)}\``;
 			} else {
 				for (let i = 0; i < dbFieldsNeeded.length; i++) {

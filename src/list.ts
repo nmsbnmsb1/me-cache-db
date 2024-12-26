@@ -1,27 +1,39 @@
-import { NameKey } from './core/keys';
-import { FieldsOptions, attachAs } from './core/fields';
-import { SqlOptions, OrderDefinition } from './core/db';
-import { PageData } from './core/db.page';
-import { CacheManager, Cache } from './core/cache';
-import { DataDescriptor, cgetData, cset, Data, DataTransformer } from './core/cdata';
-import { Trigger } from './trigger';
+import { type Cache, CacheManager } from "./core/cache";
+import {
+	type Data,
+	type DataDescriptor,
+	type DataTransformer,
+	cgetData,
+	cset,
+} from "./core/cdata";
+import type { OrderDefinition, SqlOptions } from "./core/db";
+import type { PageData } from "./core/db.page";
+import { type FieldsOptions, attachAs } from "./core/fields";
+import type { NameKey } from "./core/keys";
+import { Trigger } from "./trigger";
 
 //List查询器
-export interface ListDataDescriptor extends DataDescriptor, SqlOptions { }
-export interface ListSelField extends FieldsOptions, SqlOptions { }
+export interface ListDataDescriptor extends DataDescriptor, SqlOptions {}
+export interface ListSelField extends FieldsOptions, SqlOptions {}
 export type ListSelector = (
-	listdds: ListDataDescriptor[], page: number, pageSize: number, order: 'ASC' | 'DESC'
+	listdds: ListDataDescriptor[],
+	page: number,
+	pageSize: number,
+	order: "ASC" | "DESC",
 ) => Promise<{ count: number; datas: Data[] }>;
 export interface List {
 	sel(
 		fields: ListSelField[],
 		page: number,
 		pageSize: number,
-		order: 'ASC' | 'DESC',
+		order: "ASC" | "DESC",
 		raw?: boolean,
-		forceDB?: boolean
+		forceDB?: boolean,
 	): Promise<PageData>;
-	del(delDatas: boolean, onDataRefsNotFound?: () => Promise<any[]>): Promise<void>;
+	del(
+		delDatas: boolean,
+		onDataRefsNotFound?: () => Promise<any[]>,
+	): Promise<void>;
 }
 
 //列表缓存
@@ -45,13 +57,17 @@ export class CommonList implements List {
 		cacheConfig: false | ListCacheConfig,
 		dds: DataDescriptor[],
 		selector: ListSelector,
-		transform?: DataTransformer
+		transform?: DataTransformer,
 	) {
 		//设置缓存配置
 		if (cacheConfig) {
 			this.cid = cacheConfig.cid;
 			this.cache = CacheManager.getCache(this.cid);
-			this.listKey = this.cache.getKey('list', cacheConfig.listKey.ns, cacheConfig.listKey.nn);
+			this.listKey = this.cache.getKey(
+				"list",
+				cacheConfig.listKey.ns,
+				cacheConfig.listKey.nn,
+			);
 			this.expireMS = cacheConfig.expireMS || CacheManager.defaultExpireMS;
 		}
 		//
@@ -63,9 +79,9 @@ export class CommonList implements List {
 		fields: ListSelField[],
 		page: number,
 		pageSize: number,
-		order: OrderDefinition = 'ASC',
+		order: OrderDefinition = "ASC",
 		raw?: boolean,
-		forceDB?: boolean
+		forceDB?: boolean,
 	): Promise<PageData> {
 		//创建IListDataDescriptor结构
 		let listdds: ListDataDescriptor[] = [];
@@ -90,7 +106,7 @@ export class CommonList implements List {
 		//尝试查询缓存
 		if (!forceDB) {
 			let count = 0;
-			let datas;
+			let datas: any;
 			let lcdata = await this.cache.get(this.listKey, [countKey, pageDataKey]);
 			if (lcdata) {
 				if (lcdata[countKey] !== null && lcdata[countKey] !== undefined) {
@@ -103,7 +119,12 @@ export class CommonList implements List {
 					datas = lcdata[pageDataKey];
 				}
 				if (count && datas) {
-					datas = await cgetData(this.cid, datas, listdds, raw === false ? this.transform : undefined);
+					datas = await cgetData(
+						this.cid,
+						datas,
+						listdds,
+						raw === false ? this.transform : undefined,
+					);
 					if (datas) {
 						return {
 							count,
@@ -161,7 +182,11 @@ export class CommonList implements List {
 		if (data) {
 			let dds = [];
 			for (let dd of this.dds) {
-				dds.push({ ns: dd.ns, nn: dd.nn, dataPkField: !dd.as ? dd.pkfield : attachAs(dd.as, dd.pkfield) });
+				dds.push({
+					ns: dd.ns,
+					nn: dd.nn,
+					dataPkField: !dd.as ? dd.pkfield : attachAs(dd.as, dd.pkfield),
+				});
 			}
 			//
 			for (let key in data) {
@@ -169,7 +194,9 @@ export class CommonList implements List {
 				if (!Array.isArray(drefs)) continue;
 				for (let dref of drefs) {
 					for (let dd of dds) {
-						pl.del(this.cache.getKey('data', dd.ns, dd.nn || dref[dd.dataPkField]));
+						pl.del(
+							this.cache.getKey("data", dd.ns, dd.nn || dref[dd.dataPkField]),
+						);
 					}
 				}
 			}
@@ -198,16 +225,21 @@ export class ListSet {
 		fields: ListSelField[],
 		page: number,
 		pageSize: number,
-		order: OrderDefinition = 'ASC',
+		order: OrderDefinition = "ASC",
 		raw?: boolean,
-		forceDB?: boolean
+		forceDB?: boolean,
 	): Promise<PageData> {
 		let id = `${listConfig.ns}:${listConfig.nn}`;
-		let list = this.listMap[id] || (this.listMap[id] = this.factory(listConfig));
+		let list =
+			this.listMap[id] || (this.listMap[id] = this.factory(listConfig));
 		return list.sel(fields, page, pageSize, order, raw, forceDB);
 	}
 
-	public async del(key: NameKey, delDatas: boolean = false, onDataRefsNotFound?: () => Promise<any[]>) {
+	public async del(
+		key: NameKey,
+		delDatas = false,
+		onDataRefsNotFound?: () => Promise<any[]>,
+	) {
 		let id = `${key.ns}:${key.nn}`;
 		let list = this.listMap[id];
 		return !list ? undefined : list.del(delDatas, onDataRefsNotFound);
@@ -216,7 +248,7 @@ export class ListSet {
 	//trigger
 	public setTrigger(names: string | string[]) {
 		let ln = (body: any) => this.onTrigger(body);
-		if (typeof names === 'string') {
+		if (typeof names === "string") {
 			Trigger.set(names, ln);
 		} else {
 			for (let n of names) {
@@ -238,7 +270,7 @@ export class ListSet {
 				//TODO
 				//尝试使用默认的缓存器删除列表文件
 				if (!cache) cache = CacheManager.getCache();
-				await cache.del(cache.getKey('list', key.ns, key.nn));
+				await cache.del(cache.getKey("list", key.ns, key.nn));
 			}
 		}
 	}

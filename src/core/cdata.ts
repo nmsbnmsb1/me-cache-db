@@ -1,5 +1,5 @@
+import { type Cache, CacheManager, type CachePipeline } from './cache';
 import { type FieldsOptions, attachAs, cutAs, hasAs, pickFields } from './fields';
-import { CacheManager, type Cache, type CachePipeline } from './cache';
 import type { DataKey } from './keys';
 
 //interfaces

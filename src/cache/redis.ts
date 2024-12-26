@@ -1,23 +1,23 @@
-import Redis, { type ChainableCommander } from "ioredis";
-import type { Cache, CachePipeline } from "../core/cache";
+import Redis, { type ChainableCommander } from 'ioredis';
+import type { Cache, CachePipeline } from '../core/cache';
 
 function toRedisValue(v: any) {
-	if (v === null || v === undefined) return "null";
-	if (typeof v === "number") return `i/${v}`;
-	if (typeof v === "object") return `j/${JSON.stringify(v)}`;
+	if (v === null || v === undefined) return 'null';
+	if (typeof v === 'number') return `i/${v}`;
+	if (typeof v === 'object') return `j/${JSON.stringify(v)}`;
 	return v;
 }
 function getRedisValue(v: any) {
 	if (v === null || v === undefined) return undefined;
-	if (v === "null") return null;
-	if (v.startsWith("i/")) return parseInt(v.substring(2));
-	if (v.startsWith("j/")) return JSON.parse(v.substring(2));
+	if (v === 'null') return null;
+	if (v.startsWith('i/')) return parseInt(v.substring(2));
+	if (v.startsWith('j/')) return JSON.parse(v.substring(2));
 	return v;
 }
 
 //ICache
 export class RedisCache implements Cache {
-	public static CID = "redis";
+	public static CID = 'redis';
 
 	private redis: Redis;
 
@@ -42,7 +42,7 @@ export class RedisCache implements Cache {
 	public set(key: string, data: any): Promise<any>;
 	public set(key: string, field: string, value: any): Promise<any>;
 	public async set(key: string, field: any, value?: any) {
-		if (typeof field === "string") {
+		if (typeof field === 'string') {
 			return this.redis.hset(key, field, toRedisValue(value));
 		}
 		//
@@ -110,14 +110,12 @@ export class RedisPipeline implements CachePipeline {
 		cb: (
 			err: Error,
 			values: any[] | { [field: string]: any },
-			valueConvertor: (value: any) => any,
+			valueConvertor: (value: any) => any
 			//
-		) => any,
+		) => any
 	) {
 		if (fields) {
-			this.pl.hmget(key, ...fields, (err, values) =>
-				cb(err, values, getRedisValue),
-			);
+			this.pl.hmget(key, ...fields, (err, values) => cb(err, values, getRedisValue));
 		} else {
 			this.pl.hgetall(key, (err, values) => cb(err, values, getRedisValue));
 		}

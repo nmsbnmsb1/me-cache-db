@@ -1,12 +1,12 @@
-import type { Cache, CachePipeline } from "../core/cache";
+import type { Cache, CachePipeline } from '../core/cache';
 
 //ICache
 export class NullCache implements Cache {
-	public static CID = "null";
+	public static CID = 'null';
 
 	//common
 	public getKey(prefix: string, ns: string, nn: any) {
-		return "";
+		return '';
 	}
 	public async exists(key: string) {
 		return false;
@@ -57,9 +57,9 @@ export class NullPipeline implements CachePipeline {
 		cb: (
 			err: Error,
 			values: any[] | { [field: string]: any },
-			valueConvertor?: (value: any) => any,
+			valueConvertor?: (value: any) => any
 			//
-		) => any,
+		) => any
 	) {
 		cb(undefined, undefined);
 	}

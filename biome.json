@@ -33,7 +33,8 @@
 				"useConst": "off",
 				"useNumberNamespace": "info",
 				"noParameterAssign": "off",
-				"useTemplate": "off"
+				"useTemplate": "info",
+				"noUnusedTemplateLiteral": "off"
 			},
 			"suspicious": {
 				"noExplicitAny": "off",

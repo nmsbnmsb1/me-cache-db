@@ -1,18 +1,18 @@
 export type IOnTrigger = (body: any) => Promise<any>;
 
-export class Trigger {
-	private static map: { [name: string]: IOnTrigger[] } = {};
+const TriggerMap: { [name: string]: IOnTrigger[] } = {};
 
-	public static set(name: string, onTrigger: IOnTrigger) {
-		let arr = Trigger.map[name];
-		if (!arr) arr = Trigger.map[name] = [];
+export const Trigger = {
+	set(name: string, onTrigger: IOnTrigger) {
+		let arr = TriggerMap[name];
+		if (!arr) arr = TriggerMap[name] = [];
 		if (arr.indexOf(onTrigger) < 0) {
 			arr.push(onTrigger);
 		}
-	}
-	public static async do(name: string, body?: any) {
+	},
+	async do(name: string, body?: any) {
 		// console.log(name);
-		let arr = Trigger.map[name];
+		let arr = TriggerMap[name];
 		// console.log(arr);
 		if (!arr || arr.length <= 0) return;
 		//
@@ -21,5 +21,5 @@ export class Trigger {
 			ps.push(l(body));
 		}
 		await Promise.all(ps);
-	}
-}
+	},
+};

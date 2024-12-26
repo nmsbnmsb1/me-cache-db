@@ -1,4 +1,4 @@
-import type { Cache, CachePipeline } from "../core/cache";
+import type { Cache, CachePipeline } from '../core/cache';
 export declare class NullCache implements Cache {
     static CID: string;
     getKey(prefix: string, ns: string, nn: any): string;

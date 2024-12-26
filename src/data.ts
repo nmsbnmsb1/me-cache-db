@@ -1,6 +1,6 @@
 import { CacheManager } from './core/cache';
-import { DataDescriptor, cdel, cgetData, cset, csetData, Data, DataTransformer } from './core/cdata';
-import { DataKey } from './core/keys';
+import { type Data, type DataDescriptor, type DataTransformer, cdel, cgetData, cset, csetData } from './core/cdata';
+import type { DataKey } from './core/keys';
 
 //--------------------数据操作--------------------
 //select
@@ -59,6 +59,7 @@ export async function update(
 	try {
 		await updater(data);
 	} catch (e) {
+		// biome-ignore lint/complexity/noUselessCatch: 1
 		throw e;
 	}
 	//如果更新成功，更新缓存
@@ -68,7 +69,7 @@ export async function update(
 	if (handleCache === 'update') {
 		let context = { data };
 		let dds = [dd];
-		let pl;
+		let pl: any;
 		if (!Array.isArray(data)) {
 			//先判断key是否存在
 			if (await cache.exists(cache.getKey('data', dd.ns, dd.nn || data[dd.pkfield]))) {
@@ -110,6 +111,7 @@ export async function del(
 	try {
 		await deleter(data);
 	} catch (e) {
+		// biome-ignore lint/complexity/noUselessCatch: 1
 		throw e;
 	}
 	//

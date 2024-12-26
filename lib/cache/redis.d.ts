@@ -1,5 +1,5 @@
-import Redis, { type ChainableCommander } from "ioredis";
-import type { Cache, CachePipeline } from "../core/cache";
+import Redis, { type ChainableCommander } from 'ioredis';
+import type { Cache, CachePipeline } from '../core/cache';
 export declare class RedisCache implements Cache {
     static CID: string;
     private redis;

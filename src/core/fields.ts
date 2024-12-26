@@ -79,24 +79,31 @@ export function cutAs(as: string, asField: string) {
 // }
 //Field 字段处理 ------------------------------------------------------------------------
 
-
-
 //生成字段
 
-export interface FieldsModifier { [name: string]: boolean | 'override' };
-export interface FieldsPicker { base: string | string[], modifier: FieldsModifier };
-export type Fields = string | string[] | FieldsPicker
+export interface FieldsModifier {
+	[name: string]: boolean | 'override';
+}
+export interface FieldsPicker {
+	base: string | string[];
+	modifier: FieldsModifier;
+}
+export type Fields = string | string[] | FieldsPicker;
 export function pickFields(base: Fields, modifier?: FieldsModifier) {
 	let result: string[];
 	//
 	let baseFields: any = base;
-	if ((base as FieldsPicker).base) { baseFields = (base as FieldsPicker).base }
+	if ((base as FieldsPicker).base) {
+		baseFields = (base as FieldsPicker).base;
+	}
 	if (typeof baseFields === 'string') {
 		result = baseFields.split(',');
 	} else if (Array.isArray(baseFields)) {
 		result = baseFields.slice();
 	}
-	if (!modifier && (base as FieldsPicker).modifier) { modifier = (base as FieldsPicker).modifier }
+	if (!modifier && (base as FieldsPicker).modifier) {
+		modifier = (base as FieldsPicker).modifier;
+	}
 	if (modifier) {
 		for (let n in modifier) {
 			let tmp = n.split(',');
@@ -128,21 +135,21 @@ export function filterDataFields(data: any, base: Fields, modifier?: FieldsModif
 }
 //字段方案表,设置多种字段方案
 export class FieldScheme {
-	private base: string[]
+	private base: string[];
 	private m: { [scheme: string]: string[] };
 	constructor(base: string | string[], m: { [scheme: string]: string | string[] | FieldsModifier }) {
 		this.base = typeof base === 'string' ? base.split(',') : base;
 		//预缓存m
 		this.m = {};
 		for (let scheme in m) {
-			let config = m[scheme]
+			let config = m[scheme];
 			if (typeof config === 'string') this.m[scheme] = config.split(',');
-			else if (Array.isArray(config)) this.m[scheme] = config
-			else this.m[scheme] = pickFields(this.base, config as FieldsModifier)
+			else if (Array.isArray(config)) this.m[scheme] = config;
+			else this.m[scheme] = pickFields(this.base, config as FieldsModifier);
 		}
 	}
 	public getBase() {
-		return this.base.slice()
+		return this.base.slice();
 	}
 	//根据方案名获取需要的字段
 	public getFields(fields: string | string[] | FieldsModifier | FieldsPicker): string[] {
@@ -151,9 +158,8 @@ export class FieldScheme {
 			return fields.split(',');
 		}
 		if (Array.isArray(fields)) return fields.slice();
-		if ((fields as FieldsPicker).base && (fields as FieldsPicker).modifier)
-			return pickFields(fields as FieldsPicker)
-		return pickFields(this.base, fields as FieldsModifier)
+		if ((fields as FieldsPicker).base && (fields as FieldsPicker).modifier) return pickFields(fields as FieldsPicker);
+		return pickFields(this.base, fields as FieldsModifier);
 	}
 	public getFieldsOptions(fields: string | string[] | FieldsModifier | FieldsPicker): FieldsOptions {
 		return { fields: this.getFields(fields) };

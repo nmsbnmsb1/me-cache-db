@@ -1,18 +1,18 @@
-import { NameKey } from './core/keys';
-import { FieldsOptions } from './core/fields';
-import { SqlOptions, OrderDefinition } from './core/db';
-import { PageData } from './core/db.page';
-import { DataDescriptor, Data, DataTransformer } from './core/cdata';
+import { type Data, type DataDescriptor, type DataTransformer } from "./core/cdata";
+import type { OrderDefinition, SqlOptions } from "./core/db";
+import type { PageData } from "./core/db.page";
+import { type FieldsOptions } from "./core/fields";
+import type { NameKey } from "./core/keys";
 export interface ListDataDescriptor extends DataDescriptor, SqlOptions {
 }
 export interface ListSelField extends FieldsOptions, SqlOptions {
 }
-export type ListSelector = (listdds: ListDataDescriptor[], page: number, pageSize: number, order: 'ASC' | 'DESC') => Promise<{
+export type ListSelector = (listdds: ListDataDescriptor[], page: number, pageSize: number, order: "ASC" | "DESC") => Promise<{
     count: number;
     datas: Data[];
 }>;
 export interface List {
-    sel(fields: ListSelField[], page: number, pageSize: number, order: 'ASC' | 'DESC', raw?: boolean, forceDB?: boolean): Promise<PageData>;
+    sel(fields: ListSelField[], page: number, pageSize: number, order: "ASC" | "DESC", raw?: boolean, forceDB?: boolean): Promise<PageData>;
     del(delDatas: boolean, onDataRefsNotFound?: () => Promise<any[]>): Promise<void>;
 }
 export interface ListCacheConfig {
