@@ -30,7 +30,7 @@
 				"noUselessLoneBlockStatements": "off"
 			},
 			"style": {
-				"useConst": "off",
+				"useConst": "info",
 				"useNumberNamespace": "info",
 				"noParameterAssign": "off",
 				"useTemplate": "info",

@@ -4,8 +4,7 @@ const TriggerMap: { [name: string]: IOnTrigger[] } = {};
 
 export const Trigger = {
 	set(name: string, onTrigger: IOnTrigger) {
-		let arr = TriggerMap[name];
-		if (!arr) arr = TriggerMap[name] = [];
+		let arr = TriggerMap[name] || (TriggerMap[name] = []);
 		if (arr.indexOf(onTrigger) < 0) {
 			arr.push(onTrigger);
 		}
