@@ -247,7 +247,12 @@ export class ListSet {
 		forceDB?: boolean
 	): Promise<PageData> {
 		let id = `${listConfig.ns}:${listConfig.nn}`;
-		let list = this.listMap[id] || (this.listMap[id] = this.factory(listConfig));
+		let list = this.listMap[id];
+		if (!list) {
+			//如果是第一次创建列表，强制从数据库中拉取一次数据
+			forceDB = true;
+			list = this.listMap[id] = this.factory(listConfig);
+		}
 		return list.sel(fields, page, pageSize, order, raw, forceDB);
 	}
 	public async del(key: NameKey, delDatas = false, onDataRefsNotFound?: () => Promise<any[]>) {

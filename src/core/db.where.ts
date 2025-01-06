@@ -83,6 +83,12 @@ export function getFieldWhereSql(field: string, where: Where): string {
 		return conditions.join(` ${logic} `);
 	}
 	//Other types
+	if (where === null || where === undefined) {
+		return `\`${field}\` is NULL`;
+	}
+	if (Array.isArray(where)) {
+		return `\`${field}\` in ${getValueSql(where as any)}`;
+	}
 	return `\`${field}\` = ${getValueSql(where as any)}`;
 }
 

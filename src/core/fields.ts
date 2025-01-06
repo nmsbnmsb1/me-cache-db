@@ -148,8 +148,8 @@ export class FieldScheme {
 			else this.m[scheme] = pickFields(this.base, config as FieldsModifier);
 		}
 	}
-	public getBase() {
-		return this.base.slice();
+	public getBase(modifier?: FieldsModifier) {
+		return !modifier ? this.base.slice() : pickFields(this.base, modifier);
 	}
 	//根据方案名获取需要的字段
 	public getFields(fields: string | string[] | FieldsModifier | FieldsPicker): string[] {

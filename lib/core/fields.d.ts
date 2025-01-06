@@ -20,7 +20,7 @@ export declare class FieldScheme {
     constructor(base: string | string[], m: {
         [scheme: string]: string | string[] | FieldsModifier;
     });
-    getBase(): string[];
+    getBase(modifier?: FieldsModifier): string[];
     getFields(fields: string | string[] | FieldsModifier | FieldsPicker): string[];
     getFieldsOptions(fields: string | string[] | FieldsModifier | FieldsPicker): FieldsOptions;
     getDbFieldsOptions(fields: string | string[] | FieldsModifier | FieldsPicker): FieldsOptions;
