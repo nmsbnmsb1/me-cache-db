@@ -21,6 +21,7 @@ export declare class FieldScheme {
         [scheme: string]: string | string[] | FieldsModifier;
     });
     getBase(modifier?: FieldsModifier): string[];
+    getScheme(schemeName: string, modifier?: FieldsModifier): string[];
     getFields(fields: string | string[] | FieldsModifier | FieldsPicker): string[];
     getFieldsOptions(fields: string | string[] | FieldsModifier | FieldsPicker): FieldsOptions;
     getDbFieldsOptions(fields: string | string[] | FieldsModifier | FieldsPicker): FieldsOptions;

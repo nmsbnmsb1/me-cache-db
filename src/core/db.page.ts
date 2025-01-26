@@ -1,14 +1,20 @@
 export type PageQuery = (querySql: string) => Promise<any>;
 
-export interface PageData {
+export interface PageData<T = any> {
 	count: number;
 	page: number;
 	pageSize: number;
 	totalPages: number;
-	datas: any[];
+	datas: T[];
 }
 
-export async function doPage(page: number, pageSize: number, countField: string, selectSql: string, query: PageQuery) {
+export async function doPage<T = any>(
+	page: number,
+	pageSize: number,
+	countField: string,
+	selectSql: string,
+	query: PageQuery
+) {
 	let totalCount: number;
 	let rs: any;
 	//如果分页查询
@@ -30,5 +36,5 @@ export async function doPage(page: number, pageSize: number, countField: string,
 		pageSize,
 		totalPages: pageSize <= 0 ? 1 : Math.ceil(totalCount / pageSize),
 		datas: rs || [],
-	} as PageData;
+	} as PageData<T>;
 }

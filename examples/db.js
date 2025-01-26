@@ -11,6 +11,8 @@ function check(sql, expected) {
 	//ParseSearchParam IS NULL
 	check(getFieldWhereSql('id', null), '`id` IS NULL');
 	check(getFieldWhereSql('id', ['!=', null]), '`id` IS NOT NULL');
+	check(getFieldWhereSql('id', ['is', null]), '`id` IS NULL');
+	check(getFieldWhereSql('id', ['is not', null]), '`id` IS NOT NULL');
 	//ParseSearchParam Eq
 	check(getFieldWhereSql('id', 10), '`id` = 10');
 	check(getFieldWhereSql('id', 'uuid'), "`id` = 'uuid'");
@@ -26,10 +28,12 @@ function check(sql, expected) {
 	//ParseSearchParam BETWEEN/NOT BETWEEN
 	check(getFieldWhereSql('id', ['BETWEEN', [1, 2]]), '`id` BETWEEN 1 AND 2');
 	check(getFieldWhereSql('id', ['NOT BETWEEN', [1, 2]]), '`id` NOT BETWEEN 1 AND 2');
-	check(getFieldWhereSql('id', { '>': 0, '<': 10 }), '`id` > 0 AND `id` < 10');
+	check(getFieldWhereSql('id', [ '>', 0, 'or', '<', 10 ]), '`id` > 0 OR `id` < 10');
+	check(getFieldWhereSql('id', [ 'IN', [] ]), "");
+	check(getFieldWhereSql('id', [ 'IN', [1, 2, 'a'],'<', 10, '=', null ]), "`id` IN (1,2,'a') AND `id` < 10 AND `id` IS NULL");
 	//ParseWhere
 	check(getWhereSql('', { id: 10, name: 'daniel' }), "`id` = 10 AND `name` = 'daniel'");
-	check(getWhereSql('', { id: 10, name: 'daniel', _logic: 'OR' }), "`id` = 10 OR `name` = 'daniel'");
+	check(getWhereSql('', { id: 10, _logic: 'OR', name: 'daniel' }), "`id` = 10 OR `name` = 'daniel'");
 	check(
 		getWhereSql('', { id: 10, name: 'daniel', _child1: { age: 30, _logic: 'OR', sex: '2' } }),
 		"`id` = 10 AND `name` = 'daniel' AND (`age` = 30 OR `sex` = '2')"
@@ -37,5 +41,18 @@ function check(sql, expected) {
 	check(
 		getWhereSql('b', { id: 10, name: 'daniel', _child1: { age: 30, _logic: 'OR', sex: ['in', ['2', '4']] } }),
 		"`b.id` = 10 AND `b.name` = 'daniel' AND (`b.age` = 30 OR `b.sex` IN ('2','4'))"
+	);
+	check(
+		getWhereSql('c', {
+			name: ['like', '%John%'],
+			age: ['(','between', [18, 30],')'],
+			_logic: 'OR',
+			address: {
+				city: 'New York',
+				_logic: 'AND',
+				zip: ['!=', null],
+			},
+		}),
+		"`c.name` LIKE '%John%' OR ( `c.age` BETWEEN 18 AND 30 ) OR (`c.city` = 'New York' AND `c.zip` IS NOT NULL)"
 	);
 })();

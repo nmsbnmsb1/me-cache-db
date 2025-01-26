@@ -151,6 +151,9 @@ export class FieldScheme {
 	public getBase(modifier?: FieldsModifier) {
 		return !modifier ? this.base.slice() : pickFields(this.base, modifier);
 	}
+	public getScheme(schemeName: string, modifier?: FieldsModifier) {
+		return !modifier ? this.m[schemeName].slice() : pickFields(this.m[schemeName], modifier);
+	}
 	//根据方案名获取需要的字段
 	public getFields(fields: string | string[] | FieldsModifier | FieldsPicker): string[] {
 		if (typeof fields === 'string') {
@@ -158,7 +161,13 @@ export class FieldScheme {
 			return fields.split(',');
 		}
 		if (Array.isArray(fields)) return fields.slice();
-		if ((fields as FieldsPicker).base && (fields as FieldsPicker).modifier) return pickFields(fields as FieldsPicker);
+		if ((fields as FieldsPicker).base && (fields as FieldsPicker).modifier) {
+			let fp = fields as FieldsPicker;
+			if (typeof fp.base === 'string' && this.m[fp.base]) {
+				fp.base = this.m[fp.base];
+			}
+			return pickFields(fp);
+		}
 		return pickFields(this.base, fields as FieldsModifier);
 	}
 	public getFieldsOptions(fields: string | string[] | FieldsModifier | FieldsPicker): FieldsOptions {
