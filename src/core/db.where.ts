@@ -118,12 +118,12 @@ function _getWhereSql(asPrefix: string, wo: WhereOptions, isChild: boolean): str
 		let where = wo[field];
 		//如果是嵌套where
 		let fieldSql: string;
-		if (typeof where === 'object' && !Array.isArray(where)) {
+		if (where !== null && typeof where === 'object' && !Array.isArray(where)) {
 			//WhereComposite
 			fieldSql = _getWhereSql(asPrefix, where as any, true);
 		} else {
 			//Where
-			fieldSql = getFieldWhereSql(`${asPrefix}${field}`, where);
+			fieldSql = getFieldWhereSql(`${asPrefix}${field}`, where as any);
 		}
 		if (fieldSql) {
 			sqls.push(fieldSql);

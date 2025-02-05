@@ -55,4 +55,5 @@ function check(sql, expected) {
 		}),
 		"`c.name` LIKE '%John%' OR ( `c.age` BETWEEN 18 AND 30 ) OR (`c.city` = 'New York' AND `c.zip` IS NOT NULL)"
 	);
+	check(getWhereSql('x', { status: null, uid: [ 'NOT IN', [] ] }),"`x.status` IS NULL");
 })();
