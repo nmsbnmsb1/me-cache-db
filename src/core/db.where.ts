@@ -135,7 +135,7 @@ function _getWhereSql(asPrefix: string, wo: WhereOptions, isChild: boolean): str
 		return '';
 	}
 	if (length === 1) {
-		return sqls[0];
+		return !isChild ? sqls[0] : `(${sqls[0]})`;
 	}
 	let logic = !wo._logic ? 'AND' : (wo._logic as string).toUpperCase();
 	let whereSql = sqls.join(` ${logic} `);
