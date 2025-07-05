@@ -1,6 +1,6 @@
 {
 	"name": "me-cache-db",
-	"version": "1.0.9",
+	"version": "1.0.10",
 	"main": "lib/index.js",
 	"scripts": {
 		"format": "biome format",
@@ -12,8 +12,8 @@
 		"ioredis": "^5.6.1"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^1.9.4",
-		"@types/node": "^22.15.17",
+		"@biomejs/biome": "^2.0.6",
+		"@types/node": "^24.0.10",
 		"typescript": "^5.8.3"
 	}
 }
